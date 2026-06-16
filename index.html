@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>冒險村物語</title>
+<title>山寨物語</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700&display=swap');
 :root {
@@ -273,7 +273,7 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <span id="game-title">🏰 冒險村物語 2</span>
+  <span id="game-title">🏰 山寨物語</span>
   <div class="stat-pill"><span class="icon">💰</span><span class="lbl">金幣</span><span class="val" id="gold-val">1500</span></div>
   <div class="stat-pill"><span class="icon">⭐</span><span class="lbl">人氣</span><span class="val" id="pop-val">0</span></div>
   <div class="stat-pill"><span class="icon">😊</span><span class="lbl">滿足</span><span class="val" id="sat-val">0</span></div>
@@ -331,7 +331,7 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 
 <!-- BOTTOM BAR -->
 <div id="bottombar">
-  <span id="status-msg">歡迎來到冒險村！Phase 2 — 建造設施、完成任務、送居民入地下城！</span>
+  <span id="status-msg">歡迎來到山寨物語！建造設施、完成任務、送居民入地下城！</span>
   <button class="btn-action blue" onclick="recruitAdventurer()">招募 💎</button>
   <button class="btn-action red" onclick="triggerMonsterWave()">波次 👹</button>
   <button class="btn-action orange" onclick="openDungeonMenu()">地下城 🗝</button>
@@ -425,7 +425,7 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 
 <script>
 /* ══════════════════════════════════════════════════════
-   GAME DATA — Phase 2 Extended Schema
+   GAME DATA
 ══════════════════════════════════════════════════════ */
 const GAME_DATA = {
   buildings:[
@@ -1585,7 +1585,7 @@ function drawMonster(m){
 }
 
 /* ══════════════════════════════════════════════════════
-   FSM — ADVENTURER AGENT (Phase 2 Extended)
+   FSM — ADVENTURER AGENT
 ══════════════════════════════════════════════════════ */
 let advIdCounter=1;
 
@@ -1940,7 +1940,7 @@ function trySpawnMonster(adv){
 }
 
 /* ══════════════════════════════════════════════════════
-   RESIDENT SYSTEM (Phase 2 Core)
+   RESIDENT SYSTEM
 ══════════════════════════════════════════════════════ */
 function promoteResident(adv){
   adv.isResident=true;
@@ -1998,7 +1998,7 @@ function applyResidentBonuses(){
 }
 
 /* ══════════════════════════════════════════════════════
-   SYNERGY SYSTEM (Phase 2 Core)
+   SYNERGY SYSTEM
 ══════════════════════════════════════════════════════ */
 function recalcSynergies(){
   G.activeSynergyMap={};
@@ -2409,7 +2409,7 @@ function updateTopBar(){
 }
 
 /* ══════════════════════════════════════════════════════
-   BUILDING SYSTEM (Phase 2 — Upgrade)
+   BUILDING SYSTEM
 ══════════════════════════════════════════════════════ */
 function buildBuildPanel(){
   const c=document.getElementById('left-tab-build');c.innerHTML='<div style="font-size:13px;color:var(--text-dim);margin-bottom:6px;">選擇建築後點擊地圖空格放置</div>';
@@ -2495,7 +2495,7 @@ function upgradeBuilding(gx,gy){
 }
 
 /* ══════════════════════════════════════════════════════
-   QUEST SYSTEM (Phase 2 Core)
+   QUEST SYSTEM
 ══════════════════════════════════════════════════════ */
 function updateQuestProgress(){
   let hasNew=false;
@@ -3009,7 +3009,7 @@ function init(){
     G.adventurers.push(adv);
   }
   document.getElementById('adv-count-val').textContent=G.adventurers.length;
-  addLog('🏰 冒險村物語 Phase 3 — 開始！','level');
+  addLog('🏰 山寨物語 — 開始！','level');
   addLog('🆕 新系統：城牆防禦、資源採集、裝備升級、攻城事件！','build');
   addLog('🪵 冒險者會自動採集樹林/石礦/鐵礦資源','earn');
   addLog('🏰 建造城牆抵禦攻城！每隔一段時間怪物會進攻村莊','combat');
