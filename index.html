@@ -647,17 +647,18 @@ function drawTile(gx,gy,fillColor,strokeColor='rgba(0,0,0,0.3)'){
   ctx.strokeStyle=strokeColor; ctx.lineWidth=0.5; ctx.stroke();
 }
 
-// Wrapper: lets us draw buildings to any canvas context (used for offscreen cache)
+// Draw buildings to a specific context (offscreen or main)
+// Uses a local _dc variable instead of monkey-patching the global ctx
+let _dc=null; // drawing context override — null means use global ctx
+
 function drawBuilding3DTo(targetCtx,gx,gy,bdata,bLevel,synActive,isSelected){
-  // Temporarily swap ctx for the duration of this draw
-  const saved=ctx;
-  // We reassign the module-level ctx variable
-  ctx=targetCtx;
+  _dc=targetCtx;
   drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected);
-  ctx=saved;
+  _dc=null;
 }
 
 function drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected){
+  const dc=_dc||ctx; // use override if set, else global ctx
   const{x,y}=gridToScreen(gx,gy);
   const bh=28+bLevel*6;
   const tc=bdata.tileColor||'#5a5a5a';
@@ -666,116 +667,116 @@ function drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected){
   const roof=bdata.roofStyle||'flat';
 
   // ── Synergy glow ──
-  if(synActive){ctx.save();ctx.shadowColor='gold';ctx.shadowBlur=14;}
+  if(synActive){dc.save();dc.shadowColor='gold';dc.shadowBlur=14;}
 
   // ── Left face ──
-  ctx.beginPath();
-  ctx.moveTo(x-ISO_W/2,y-bh+ISO_H/2);ctx.lineTo(x,y-bh+ISO_H);
-  ctx.lineTo(x,y+ISO_H/2);ctx.lineTo(x-ISO_W/2,y+ISO_H/4);
-  ctx.closePath();
-  const g1=ctx.createLinearGradient(x-ISO_W/2,0,x,0);
+  dc.beginPath();
+  dc.moveTo(x-ISO_W/2,y-bh+ISO_H/2);dc.lineTo(x,y-bh+ISO_H);
+  dc.lineTo(x,y+ISO_H/2);dc.lineTo(x-ISO_W/2,y+ISO_H/4);
+  dc.closePath();
+  const g1=dc.createLinearGradient(x-ISO_W/2,0,x,0);
   g1.addColorStop(0,shadeColor(bc,-50));g1.addColorStop(1,bc);
-  ctx.fillStyle=g1;ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1;ctx.stroke();
+  dc.fillStyle=g1;dc.fill();
+  dc.strokeStyle='rgba(0,0,0,0.5)';dc.lineWidth=1;dc.stroke();
 
   // ── Right face ──
-  ctx.beginPath();
-  ctx.moveTo(x+ISO_W/2,y-bh+ISO_H/2);ctx.lineTo(x,y-bh+ISO_H);
-  ctx.lineTo(x,y+ISO_H/2);ctx.lineTo(x+ISO_W/2,y+ISO_H/4);
-  ctx.closePath();
-  const g2=ctx.createLinearGradient(x,0,x+ISO_W/2,0);
+  dc.beginPath();
+  dc.moveTo(x+ISO_W/2,y-bh+ISO_H/2);dc.lineTo(x,y-bh+ISO_H);
+  dc.lineTo(x,y+ISO_H/2);dc.lineTo(x+ISO_W/2,y+ISO_H/4);
+  dc.closePath();
+  const g2=dc.createLinearGradient(x,0,x+ISO_W/2,0);
   g2.addColorStop(0,bc);g2.addColorStop(1,shadeColor(bc,-25));
-  ctx.fillStyle=g2;ctx.fill();ctx.stroke();
+  dc.fillStyle=g2;dc.fill();dc.stroke();
 
   // ── Top face ──
-  ctx.beginPath();
-  ctx.moveTo(x,y-bh);ctx.lineTo(x+ISO_W/2,y-bh+ISO_H/2);
-  ctx.lineTo(x,y-bh+ISO_H);ctx.lineTo(x-ISO_W/2,y-bh+ISO_H/2);
-  ctx.closePath();ctx.fillStyle=tc;ctx.fill();ctx.stroke();
+  dc.beginPath();
+  dc.moveTo(x,y-bh);dc.lineTo(x+ISO_W/2,y-bh+ISO_H/2);
+  dc.lineTo(x,y-bh+ISO_H);dc.lineTo(x-ISO_W/2,y-bh+ISO_H/2);
+  dc.closePath();dc.fillStyle=tc;dc.fill();dc.stroke();
 
   // ── Roof shapes ──
   if(roof==='peak'){
     // 三角屋頂 (旅館 / 市集)
-    ctx.beginPath();
-    ctx.moveTo(x-ISO_W/2,y-bh+ISO_H/2);
-    ctx.lineTo(x+ISO_W/2,y-bh+ISO_H/2);
-    ctx.lineTo(x,y-bh-13);
-    ctx.closePath();
-    ctx.fillStyle=rc;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x-ISO_W/2,y-bh+ISO_H/2);
+    dc.lineTo(x+ISO_W/2,y-bh+ISO_H/2);
+    dc.lineTo(x,y-bh-13);
+    dc.closePath();
+    dc.fillStyle=rc;dc.fill();
+    dc.strokeStyle='rgba(0,0,0,0.4)';dc.lineWidth=1;dc.stroke();
     // Ridge line
-    ctx.beginPath();
-    ctx.moveTo(x-ISO_W/4,y-bh+ISO_H/4);
-    ctx.lineTo(x,y-bh-13);
-    ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=0.8;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x-ISO_W/4,y-bh+ISO_H/4);
+    dc.lineTo(x,y-bh-13);
+    dc.strokeStyle='rgba(0,0,0,0.25)';dc.lineWidth=0.8;dc.stroke();
 
   }else if(roof==='tower'){
     // 塔樓矩形 + 旗幟 (武器店 / 防具店 / 公會)
     const tw=9,th=16;
     // Tower body
-    ctx.fillStyle=shadeColor(rc,-10);
-    ctx.fillRect(x-tw/2,y-bh-th,tw,th);
-    ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1;
-    ctx.strokeRect(x-tw/2,y-bh-th,tw,th);
+    dc.fillStyle=shadeColor(rc,-10);
+    dc.fillRect(x-tw/2,y-bh-th,tw,th);
+    dc.strokeStyle='rgba(0,0,0,0.5)';dc.lineWidth=1;
+    dc.strokeRect(x-tw/2,y-bh-th,tw,th);
     // Tower window
-    ctx.fillStyle='rgba(255,220,100,0.6)';
-    ctx.fillRect(x-2,y-bh-th+4,4,4);
+    dc.fillStyle='rgba(255,220,100,0.6)';
+    dc.fillRect(x-2,y-bh-th+4,4,4);
     // Crenellation (城牆垛口)
-    ctx.fillStyle=shadeColor(rc,10);
+    dc.fillStyle=shadeColor(rc,10);
     for(let ci=-1;ci<=1;ci+=2){
-      ctx.fillRect(x+ci*(tw/2)-2,y-bh-th-4,4,5);
+      dc.fillRect(x+ci*(tw/2)-2,y-bh-th-4,4,5);
     }
     // Flag pole
-    ctx.beginPath();
-    ctx.moveTo(x+tw/2,y-bh-th);
-    ctx.lineTo(x+tw/2,y-bh-th-12);
-    ctx.strokeStyle='rgba(180,160,100,0.9)';ctx.lineWidth=1.2;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x+tw/2,y-bh-th);
+    dc.lineTo(x+tw/2,y-bh-th-12);
+    dc.strokeStyle='rgba(180,160,100,0.9)';dc.lineWidth=1.2;dc.stroke();
     // Flag triangle
-    ctx.beginPath();
-    ctx.moveTo(x+tw/2,y-bh-th-12);
-    ctx.lineTo(x+tw/2+10,y-bh-th-7);
-    ctx.lineTo(x+tw/2,y-bh-th-2);
-    ctx.closePath();
-    ctx.fillStyle=bdata.flagColor||'#ff4444';ctx.fill();
+    dc.beginPath();
+    dc.moveTo(x+tw/2,y-bh-th-12);
+    dc.lineTo(x+tw/2+10,y-bh-th-7);
+    dc.lineTo(x+tw/2,y-bh-th-2);
+    dc.closePath();
+    dc.fillStyle=bdata.flagColor||'#ff4444';dc.fill();
 
   }else if(roof==='dome'){
     // 圓穹頂 (魔法塔 / 神殿)
-    ctx.beginPath();
-    ctx.ellipse(x,y-bh,ISO_W/2.1,15,0,Math.PI,0);
-    const dg=ctx.createRadialGradient(x-5,y-bh-8,1,x,y-bh,ISO_W/2.1);
+    dc.beginPath();
+    dc.ellipse(x,y-bh,ISO_W/2.1,15,0,Math.PI,0);
+    const dg=dc.createRadialGradient(x-5,y-bh-8,1,x,y-bh,ISO_W/2.1);
     dg.addColorStop(0,shadeColor(rc,50));dg.addColorStop(1,rc);
-    ctx.fillStyle=dg;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.35)';ctx.lineWidth=1;ctx.stroke();
+    dc.fillStyle=dg;dc.fill();
+    dc.strokeStyle='rgba(0,0,0,0.35)';dc.lineWidth=1;dc.stroke();
     // Dome spire
-    ctx.beginPath();
-    ctx.moveTo(x,y-bh-15);ctx.lineTo(x,y-bh-26);
-    ctx.strokeStyle='rgba(200,180,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x,y-bh-15);dc.lineTo(x,y-bh-26);
+    dc.strokeStyle='rgba(200,180,255,0.8)';dc.lineWidth=1.5;dc.stroke();
     // Spire orb
-    ctx.beginPath();
-    ctx.arc(x,y-bh-27,3,0,Math.PI*2);
-    ctx.fillStyle=bdata.roofIcon==='🌙'?'#cc88ff':'#ffee88';
-    ctx.fill();
+    dc.beginPath();
+    dc.arc(x,y-bh-27,3,0,Math.PI*2);
+    dc.fillStyle=bdata.roofIcon==='🌙'?'#cc88ff':'#ffee88';
+    dc.fill();
     // Roof icon
     if(bdata.roofIcon){
-      ctx.font='9px serif';ctx.textAlign='center';
-      ctx.fillText(bdata.roofIcon,x,y-bh-14);
+      dc.font='9px serif';dc.textAlign='center';
+      dc.fillText(bdata.roofIcon,x,y-bh-14);
     }
 
   }else if(roof==='chimney'){
     // 煙囪 (蛋糕店)
     // Pitched mini-roof
-    ctx.beginPath();
-    ctx.moveTo(x-ISO_W/2+2,y-bh+ISO_H/2);
-    ctx.lineTo(x+ISO_W/2-2,y-bh+ISO_H/2);
-    ctx.lineTo(x,y-bh-8);
-    ctx.closePath();
-    ctx.fillStyle=rc;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=0.8;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x-ISO_W/2+2,y-bh+ISO_H/2);
+    dc.lineTo(x+ISO_W/2-2,y-bh+ISO_H/2);
+    dc.lineTo(x,y-bh-8);
+    dc.closePath();
+    dc.fillStyle=rc;dc.fill();
+    dc.strokeStyle='rgba(0,0,0,0.3)';dc.lineWidth=0.8;dc.stroke();
     // Chimney stack
-    ctx.fillStyle=shadeColor(rc,-20);
-    ctx.fillRect(x+3,y-bh-20,7,13);
-    ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;
-    ctx.strokeRect(x+3,y-bh-20,7,13);
+    dc.fillStyle=shadeColor(rc,-20);
+    dc.fillRect(x+3,y-bh-20,7,13);
+    dc.strokeStyle='rgba(0,0,0,0.4)';dc.lineWidth=1;
+    dc.strokeRect(x+3,y-bh-20,7,13);
     // Animated smoke puffs
     const t=performance.now()/900;
     for(let si=0;si<4;si++){
@@ -783,64 +784,64 @@ function drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected){
       const oy=si*7;
       const alpha=0.55-si*0.12;
       const r=3+si*1.2;
-      ctx.beginPath();
-      ctx.arc(x+6+ox,y-bh-22-oy,r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(210,210,210,${alpha})`;
-      ctx.fill();
+      dc.beginPath();
+      dc.arc(x+6+ox,y-bh-22-oy,r,0,Math.PI*2);
+      dc.fillStyle=`rgba(210,210,210,${alpha})`;
+      dc.fill();
     }
 
   }else if(roof==='awning'){
     // 遮陽棚 (市集)
     const aw=ISO_W*0.7;
     // Main awning shape
-    ctx.beginPath();
-    ctx.moveTo(x-aw/2,y-bh+ISO_H/2-2);
-    ctx.lineTo(x+aw/2,y-bh+ISO_H/2-2);
-    ctx.lineTo(x+aw/2+4,y-bh+ISO_H/2+7);
-    ctx.lineTo(x-aw/2-4,y-bh+ISO_H/2+7);
-    ctx.closePath();
-    ctx.fillStyle=rc;ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=0.8;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x-aw/2,y-bh+ISO_H/2-2);
+    dc.lineTo(x+aw/2,y-bh+ISO_H/2-2);
+    dc.lineTo(x+aw/2+4,y-bh+ISO_H/2+7);
+    dc.lineTo(x-aw/2-4,y-bh+ISO_H/2+7);
+    dc.closePath();
+    dc.fillStyle=rc;dc.fill();
+    dc.strokeStyle='rgba(0,0,0,0.3)';dc.lineWidth=0.8;dc.stroke();
     // Stripe pattern
     const stripes=4;
     for(let si=0;si<stripes;si++){
       const sx=x-aw/2+si*(aw/stripes)+aw/(stripes*2);
-      ctx.beginPath();
-      ctx.moveTo(sx,y-bh+ISO_H/2-2);
-      ctx.lineTo(sx+2,y-bh+ISO_H/2+7);
-      ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2;ctx.stroke();
+      dc.beginPath();
+      dc.moveTo(sx,y-bh+ISO_H/2-2);
+      dc.lineTo(sx+2,y-bh+ISO_H/2+7);
+      dc.strokeStyle='rgba(255,255,255,0.35)';dc.lineWidth=2;dc.stroke();
     }
     // Hanging lanterns
     for(let li=-1;li<=1;li++){
       const lx=x+li*10;const ly=y-bh+ISO_H/2+9;
-      ctx.beginPath();ctx.arc(lx,ly,2.5,0,Math.PI*2);
-      ctx.fillStyle='rgba(255,200,50,0.9)';ctx.fill();
-      ctx.beginPath();ctx.moveTo(lx,ly-2.5);ctx.lineTo(lx,ly-7);
-      ctx.strokeStyle='rgba(150,120,50,0.7)';ctx.lineWidth=0.8;ctx.stroke();
+      dc.beginPath();dc.arc(lx,ly,2.5,0,Math.PI*2);
+      dc.fillStyle='rgba(255,200,50,0.9)';dc.fill();
+      dc.beginPath();dc.moveTo(lx,ly-2.5);dc.lineTo(lx,ly-7);
+      dc.strokeStyle='rgba(150,120,50,0.7)';dc.lineWidth=0.8;dc.stroke();
     }
   }
 
-  if(synActive)ctx.restore();
+  if(synActive)dc.restore();
 
   // ── Emoji sign on wall ──
-  ctx.font='13px serif';ctx.textAlign='center';
-  ctx.fillText(bdata.emoji,x,y-bh+ISO_H/2+4);
+  dc.font='13px serif';dc.textAlign='center';
+  dc.fillText(bdata.emoji,x,y-bh+ISO_H/2+4);
 
   // ── Level badge ──
   if(bLevel>1){
-    ctx.fillStyle='rgba(0,0,0,0.55)';
-    ctx.fillRect(x-8,y-bh-16,16,9);
-    ctx.font='bold 10px sans-serif';ctx.fillStyle='#ffdd55';ctx.textAlign='center';
-    ctx.fillText('Lv'+bLevel,x,y-bh-9);
+    dc.fillStyle='rgba(0,0,0,0.55)';
+    dc.fillRect(x-8,y-bh-16,16,9);
+    dc.font='bold 10px sans-serif';dc.fillStyle='#ffdd55';dc.textAlign='center';
+    dc.fillText('Lv'+bLevel,x,y-bh-9);
   }
 
   // ── Selection ring ──
   if(isSelected||(!isSelected&&G.selectedBuildingOnMap&&G.selectedBuildingOnMap.gx===gx&&G.selectedBuildingOnMap.gy===gy)){
-    ctx.beginPath();
-    ctx.moveTo(x,y-bh-8);ctx.lineTo(x+ISO_W/2,y-bh+ISO_H/2-8);
-    ctx.lineTo(x,y-bh+ISO_H-8);ctx.lineTo(x-ISO_W/2,y-bh+ISO_H/2-8);
-    ctx.closePath();
-    ctx.strokeStyle='gold';ctx.lineWidth=2.5;ctx.stroke();
+    dc.beginPath();
+    dc.moveTo(x,y-bh-8);dc.lineTo(x+ISO_W/2,y-bh+ISO_H/2-8);
+    dc.lineTo(x,y-bh+ISO_H-8);dc.lineTo(x-ISO_W/2,y-bh+ISO_H/2-8);
+    dc.closePath();
+    dc.strokeStyle='gold';dc.lineWidth=2.5;dc.stroke();
   }
 }
 
