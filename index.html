@@ -585,6 +585,11 @@ const G = {
   siege:{active:false,timer:0,interval:180,siegeMonsters:[],warningShown:false},
   gameOver:false,
   forge:{open:false},
+  // ── Perf: UI dirty flags ──
+  _lastPanelGold:-1, _buildPanelDirty:true,
+  _lastAdvKey:'', _lastResCount:-1, _lastQuestKey:'',
+  _usedNames:null,
+  _questFlash:null,
 };
 
 // Init grid
@@ -610,9 +615,17 @@ const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('world-wrap');
 let ISO_W=44,ISO_H=22,OFFSET_X=0,OFFSET_Y=0;
 
+// ── Offscreen canvas cache for static buildings ──
+const offscreen=document.createElement('canvas');
+const offCtx=offscreen.getContext('2d');
+let buildingCacheDirty=true;   // set true whenever buildings change
+let buildingCacheKey='';       // string snapshot to detect changes
+
 function resize(){
   canvas.width=wrap.clientWidth; canvas.height=wrap.clientHeight;
+  offscreen.width=canvas.width; offscreen.height=canvas.height;
   OFFSET_X=canvas.width/2; OFFSET_Y=90;
+  buildingCacheDirty=true;
 }
 resize(); window.addEventListener('resize',resize);
 
@@ -634,7 +647,17 @@ function drawTile(gx,gy,fillColor,strokeColor='rgba(0,0,0,0.3)'){
   ctx.strokeStyle=strokeColor; ctx.lineWidth=0.5; ctx.stroke();
 }
 
-function drawBuilding3D(gx,gy,bdata,bLevel,synActive){
+// Wrapper: lets us draw buildings to any canvas context (used for offscreen cache)
+function drawBuilding3DTo(targetCtx,gx,gy,bdata,bLevel,synActive,isSelected){
+  // Temporarily swap ctx for the duration of this draw
+  const saved=ctx;
+  // We reassign the module-level ctx variable
+  ctx=targetCtx;
+  drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected);
+  ctx=saved;
+}
+
+function drawBuilding3D(gx,gy,bdata,bLevel,synActive,isSelected){
   const{x,y}=gridToScreen(gx,gy);
   const bh=28+bLevel*6;
   const tc=bdata.tileColor||'#5a5a5a';
@@ -812,7 +835,7 @@ function drawBuilding3D(gx,gy,bdata,bLevel,synActive){
   }
 
   // ── Selection ring ──
-  if(G.selectedBuildingOnMap&&G.selectedBuildingOnMap.gx===gx&&G.selectedBuildingOnMap.gy===gy){
+  if(isSelected||(!isSelected&&G.selectedBuildingOnMap&&G.selectedBuildingOnMap.gx===gx&&G.selectedBuildingOnMap.gy===gy)){
     ctx.beginPath();
     ctx.moveTo(x,y-bh-8);ctx.lineTo(x+ISO_W/2,y-bh+ISO_H/2-8);
     ctx.lineTo(x,y-bh+ISO_H-8);ctx.lineTo(x-ISO_W/2,y-bh+ISO_H/2-8);
@@ -935,13 +958,20 @@ function addCombatFX(sx,sy,text,color,type,tx,ty){
 }
 // Particle burst pool
 const particles=[];
+const MAX_PARTICLES=80;
 function spawnParticles(cx,cy,color,count,spread,speed){
-  for(let i=0;i<count;i++){
+  // Cap: drop oldest particles if over limit
+  const slots=Math.min(count, MAX_PARTICLES-particles.length);
+  if(slots<=0){particles.splice(0,count);} // evict oldest to make room
+  const actual=Math.min(count,MAX_PARTICLES);
+  for(let i=0;i<actual;i++){
     const angle=Math.random()*Math.PI*2;
     const spd=(0.5+Math.random())*speed;
     particles.push({x:cx,y:cy,vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd-1,
       color,alpha:1,r:2+Math.random()*2,life:20+Math.floor(Math.random()*20)});
   }
+  // Hard cap
+  if(particles.length>MAX_PARTICLES)particles.splice(0,particles.length-MAX_PARTICLES);
 }
 
 function render(){
@@ -993,31 +1023,46 @@ function render(){
     ctx.fillStyle=rdata?rdata.color:'#888';ctx.fillRect(x-9,y-4,18*stockPct,3);
   });
 
-  // Buildings
-  G.buildings.forEach(b=>{
-    const bd=GAME_DATA.buildings.find(d=>d.id===b.id);
-    const synActive=G.activeSynergyMap[b.id]===true;
-    drawBuilding3D(b.gx,b.gy,bd,b.level,synActive);
-    // Building HP bar (shown when damaged)
-    if(b.hp!==undefined&&b.hp<b.maxHp){
-      const{x,y}=gridToScreen(b.gx,b.gy);
-      const bh=28+b.level*6;
-      const hpPct=b.hp/b.maxHp;
-      ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(x-12,y-bh-10,24,5);
-      ctx.fillStyle=hpPct>0.5?'#44ee44':hpPct>0.25?'#eeaa22':'#ee2222';
-      ctx.fillRect(x-12,y-bh-10,24*hpPct,5);
-      ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=0.5;
-      ctx.strokeRect(x-12,y-bh-10,24,5);
-      // Damage cracks visual
-      if(hpPct<0.5){
-        ctx.fillStyle=`rgba(0,0,0,${0.4*(1-hpPct)})`;
-        for(let ci=0;ci<3;ci++){
-          const cx=x-8+ci*8+Math.sin(ci*77)*3,cy=y-bh/2+Math.cos(ci*33)*4;
-          ctx.fillRect(cx,cy,1+ci*0.5,6+ci*2);
+  // ── Buildings: offscreen cache (redraw only when dirty) ──
+  {
+    // Build a cheap key: positions+levels+synergy+selected+hp snapshot
+    const newKey=G.buildings.map(b=>`${b.id}${b.gx}${b.gy}${b.level}${G.activeSynergyMap[b.id]?1:0}${b.hp||0}${G.selectedBuildingOnMap===b?1:0}`).join('|');
+    if(buildingCacheDirty||newKey!==buildingCacheKey){
+      buildingCacheKey=newKey;
+      buildingCacheDirty=false;
+      offCtx.clearRect(0,0,offscreen.width,offscreen.height);
+      // Swap context so drawBuilding3D draws to offscreen
+      const realCtx=ctx;
+      // We draw directly to offCtx by temporarily monkey-patching
+      G.buildings.forEach(b=>{
+        const bd=GAME_DATA.buildings.find(d=>d.id===b.id);
+        const synActive=G.activeSynergyMap[b.id]===true;
+        drawBuilding3DTo(offCtx,b.gx,b.gy,bd,b.level,synActive,G.selectedBuildingOnMap===b);
+      });
+    }
+    // Blit cached buildings to main canvas
+    ctx.drawImage(offscreen,0,0);
+    // HP bars are dynamic — draw on main canvas every frame
+    G.buildings.forEach(b=>{
+      if(b.hp!==undefined&&b.hp<b.maxHp){
+        const{x,y}=gridToScreen(b.gx,b.gy);
+        const bh=28+b.level*6;
+        const hpPct=b.hp/b.maxHp;
+        ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(x-12,y-bh-10,24,5);
+        ctx.fillStyle=hpPct>0.5?'#44ee44':hpPct>0.25?'#eeaa22':'#ee2222';
+        ctx.fillRect(x-12,y-bh-10,24*hpPct,5);
+        ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=0.5;
+        ctx.strokeRect(x-12,y-bh-10,24,5);
+        if(hpPct<0.5){
+          ctx.fillStyle=`rgba(0,0,0,${0.4*(1-hpPct)})`;
+          for(let ci=0;ci<3;ci++){
+            const cx=x-8+ci*8+Math.sin(ci*77)*3,cy=y-bh/2+Math.cos(ci*33)*4;
+            ctx.fillRect(cx,cy,1+ci*0.5,6+ci*2);
+          }
         }
       }
-    }
-  });
+    });
+  }
 
   // Adventurers
   G.adventurers.forEach(a=>drawAdventurer(a));
@@ -1032,6 +1077,16 @@ function render(){
     ctx.restore();
     p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.alpha-=1/p.life;p.r*=0.97;
     if(p.alpha<=0)particles.splice(i,1);
+  }
+  // ── Quest screen flash ──
+  if(G._questFlash&&G._questFlash.alpha>0){
+    ctx.save();
+    ctx.globalAlpha=G._questFlash.alpha;
+    ctx.fillStyle=G._questFlash.color;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+    G._questFlash.alpha-=G._questFlash.alpha/G._questFlash.timer;
+    G._questFlash.timer--;
   }
   // ── Combat FX ──
   for(let i=combatFX.length-1;i>=0;i--){
@@ -1171,6 +1226,14 @@ function render(){
         ctx.beginPath();ctx.arc(fx.x+Math.cos(ang)*r2,fx.y+Math.sin(ang)*r2,2,0,Math.PI*2);
         ctx.fillStyle=fx.color;ctx.fill();
       }
+    } else if(fx.type==='questBanner'){
+      const scale=1+Math.sin(fx.age*0.15)*0.08;
+      ctx.save();
+      ctx.translate(fx.x,fx.y);ctx.scale(scale,scale);
+      ctx.font=`bold ${Math.min(24,14+fx.age)}px Noto Sans TC`;ctx.textAlign='center';
+      ctx.strokeStyle='rgba(0,0,0,0.8)';ctx.lineWidth=4;ctx.strokeText(fx.text,0,0);
+      ctx.fillStyle=fx.color;ctx.fillText(fx.text,0,0);
+      ctx.restore();
     } else {
       // Default floating text
       ctx.font='bold 14px sans-serif';ctx.textAlign='center';
@@ -1550,38 +1613,43 @@ function drawAdventurer(adv){
 
 function drawMonster(m){
   if(m.dead) return;
-  const {x, y} = gridToScreen(m.gx, m.gy);
-  const scale = 2;
+  // Use smooth screen coords if available (siege path monsters), else grid-snapped
+  const gpos = gridToScreen(m.gx, m.gy);
+  const x = m.screenX !== undefined ? m.screenX : gpos.x;
+  const y = m.screenY !== undefined ? m.screenY : gpos.y;
+  // Scale up with town level (siege monsters scale with wave difficulty)
+  const baseScale = m.isSiege ? Math.min(3.5, 2 + G.townLevel*0.3) : 2;
+  const scale = baseScale;
   const walkFrame = Math.floor(performance.now() / 300);
 
   const spriteDef = MONSTER_SPRITES[m.id];
   if(spriteDef){
-    // Shadow
+    const shadowR = 6 + (scale-2)*4;
     ctx.beginPath();
-    ctx.ellipse(x, y + 2, 9, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 2, shadowR, shadowR*0.35, 0, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fill();
-    // Idle bob
-    const bob = Math.sin(performance.now() / 500 + m.gx) * 1.2;
-    drawPixelSprite(spriteDef, x, y - 2 + bob, scale, false, walkFrame);
+    const bob = m.isSiege ? 0 : Math.sin(performance.now()/500+m.gx)*1.2;
+    drawPixelSprite(spriteDef, x, y - 2 + bob, scale, m.isSiege ? true : false, walkFrame);
   } else {
     ctx.font = '18px serif';
     ctx.textAlign = 'center';
     ctx.fillText(m.emoji, x, y - 2);
   }
 
-  // HP bar
+  // HP bar (wider for bigger monsters)
   const hp = m.hp / m.maxHp;
+  const barW = Math.floor(20*scale*0.7);
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(x - 11, y - 24, 22, 4);
-  ctx.fillStyle = '#ee2222';
-  ctx.fillRect(x - 10, y - 23, 20 * hp, 2);
+  ctx.fillRect(x - barW/2 - 1, y - 24, barW+2, 4);
+  ctx.fillStyle = m.isSiege ? '#ff4400' : '#ee2222';
+  ctx.fillRect(x - barW/2, y - 23, barW * hp, 2);
 
-  // Name
-  ctx.font = '6px sans-serif';
+  // Name tag
+  ctx.font = (m.isSiege?'bold ':'')+'9px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(255,180,180,0.7)';
-  ctx.fillText(m.name, x, y - 26);
+  ctx.fillStyle = m.isSiege ? 'rgba(255,120,80,0.95)' : 'rgba(255,180,180,0.7)';
+  ctx.fillText((m.isSiege?'⚔ ':'')+m.name, x, y - 26);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1594,9 +1662,23 @@ function createAdventurer(){
   const avail=GAME_DATA.adventurerClasses.filter(c=>G.unlockedClasses.has(c.id)&&pop>=c.unlockPop);
   const cls=avail[Math.floor(Math.random()*avail.length)]||GAME_DATA.adventurerClasses[0];
   const level=Math.max(1,Math.floor(Math.random()*3));
-  const names=['艾登','雷恩','莉娜','科爾','賽拉','菲恩','艾斯','洛可','妮亞','薩姆','艾瑪','里昂','奧丁','薇薇','克拉','德魯'];
+  const names=[
+    '艾登','雷恩','莉娜','科爾','賽拉','菲恩','艾斯','洛可','妮亞','薩姆',
+    '艾瑪','里昂','奧丁','薇薇','克拉','德魯','伊莉','賈斯','羅文','席拉',
+    '凱登','艾娃','盧卡','諾亞','佐伊','伊森','梅雅','奧利','艾薇','芬恩',
+    '卡爾','黛娜','波特','賽門','艾拉','麥斯','葛蕾','泰勒','布蕾','哈柏',
+    '里奧','薩拉','傑克','安娜','湯姆','伊莎','金斯','瑪雅','東尼','羅拉',
+    '雲峰','玉蘭','鐵柱','小紅','大壯','翠花','阿龍','秀英','建國','麗華',
+    '志遠','曉燕','建明','淑芬','偉強','美玲','文傑','桂芳','國強','秀梅',
+  ];
+  // Track used names to avoid repeats
+  if(!G._usedNames)G._usedNames=new Set();
+  const unused=names.filter(n=>!G._usedNames.has(n));
+  const namePool=unused.length>0?unused:names;
+  const chosenName=namePool[Math.floor(Math.random()*namePool.length)];
+  G._usedNames.add(chosenName);
   const adv={
-    id:advIdCounter++, name:names[Math.floor(Math.random()*names.length)],
+    id:advIdCounter++, name:chosenName,
     classId:cls.id, level,
     hp:cls.baseHP+level*20, maxHp:cls.baseHP+level*20,
     atk:cls.baseATK+level*3, def:cls.baseDEF+level*2, spd:cls.baseSPD,
@@ -1742,9 +1824,11 @@ function updateAdventurer(adv,dt){
         }
         // Done if node empty or have enough
         if(rn.stock<=0||(G.globalResources[rn.type]||0)>=20){
-          adv._gatherTarget=null;setState(adv,'EnterTown');
+          adv._gatherTarget=null;
+          // ── Auto-forge: check if any equipment can be upgraded ──
+          autoForgeIfPossible();
+          setState(adv,'EnterTown');
         } else {
-          // Gather again
           adv.stateTimer=0;
         }
       }
@@ -1997,6 +2081,33 @@ function applyResidentBonuses(){
   });
 }
 
+function refineBuilding(gx,gy){
+  const b=G.buildings.find(b=>b.gx===gx&&b.gy===gy);if(!b||b.refined)return;
+  const d=GAME_DATA.buildings.find(x=>x.id===b.id);
+  const cost=d.cost*2;
+  if(G.gold<cost){addLog(`精煉需要 ${cost}金`,'');return;}
+  G.gold-=cost;
+  b.refined=true;
+  // Assign refine bonus per building type
+  const refineEffects={
+    inn:        '每日自動回復全員HP 5%',
+    weapon_shop:'冒險者ATK每日+1（永久累積）',
+    cake_shop:  '每天自動+3滿足度',
+    armor_shop: '格擋率額外+10%',
+    magic_tower:'魔法技能傷害×1.5',
+    guild:      '冒險者上限+5',
+    market:     '每日額外收入+50金',
+    temple:     '每5天隨機治癒一名瀕死冒險者',
+    forge:      '裝備升級資源消耗-50%',
+  };
+  b.refinedBonus=refineEffects[b.id]||'特殊效果啟動';
+  addLog(`✨ ${d.emoji}${d.name} 精煉完成！效果：${b.refinedBonus}`,'level');
+  buildingCacheDirty=true;
+  applyResidentBonuses();
+  showBuildingInfo(b);
+  updateTopBar();
+}
+
 /* ══════════════════════════════════════════════════════
    SYNERGY SYSTEM
 ══════════════════════════════════════════════════════ */
@@ -2064,6 +2175,13 @@ function tickEconomy(dt){
     const innkeeperBonus=G.residents.filter(r=>r.residentJob?.id==='innkeeper'&&b.id==='inn').length*0.3;
     const income=d.baseIncome*(1+(b.level-1)*0.5)*(1+innkeeperBonus)*G.incomeBuff*dt*G.speed*0.1;
     G.gold+=income;G.townIncome+=income;G.stats.totalGold+=income;
+    // ── Refined building passive effects ──
+    if(b.refined){
+      if(b.id==='cake_shop'){G.satisfaction=Math.min(100,G.satisfaction+3*dt*G.speed/G.dayLength);}
+      if(b.id==='market'){G.gold+=50*dt*G.speed/G.dayLength;}
+      if(b.id==='inn'){G.adventurers.forEach(a=>{if(a.state==='Resting'||a.state==='Idle')a.hp=Math.min(a.maxHp,a.hp+a.maxHp*0.05*dt*G.speed/G.dayLength);});}
+      if(b.id==='weapon_shop'&&Math.random()<dt*G.speed*0.001){G.adventurers.forEach(a=>{a.atk+=0.01;});}
+    }
   });
   G.popularity+=G.buildings.length*0.002*dt*G.speed;
   G.popularity=Math.min(200,G.popularity);
@@ -2113,7 +2231,8 @@ function updateResourceDisplay(){
 function tickSiege(dt){
   if(G.gameOver)return;
   // Siege timer — scales with town level (min interval 60s at level 5)
-  const baseInterval=Math.max(60, 180 - G.townLevel*24);
+  // Shorter intervals: start at 90s (day1), scale down to 20s at level5
+  const baseInterval=Math.max(20, 90 - G.townLevel*14);
   G.siege.interval=baseInterval;
   G.siege.timer+=dt*G.speed;
 
@@ -2148,19 +2267,21 @@ function tickSiege(dt){
           }
           const dmg=sm.atk||8;
           target.hp=Math.max(0,target.hp-dmg);
+          buildingCacheDirty=true;
           const{x,y}=gridToScreen(target.gx,target.gy);
           addCombatFX(x,y-30,'-'+dmg,'#ff2222','text');
           spawnParticles(x,y-20,'#ff4444',3,8,2);
           if(target.hp<=0){
-            // Building destroyed
             addLog(`💥 ${GAME_DATA.buildings.find(d=>d.id===target.id)?.name||target.id} 被摧毀！`,'combat');
             G.buildings.splice(G.buildings.indexOf(target),1);
             if(G.selectedBuildingOnMap===target)G.selectedBuildingOnMap=null;
+            buildingCacheDirty=true;
             checkGameOver();
           }
         } else {
-          // Move toward town
-          if(sm.gx>8)sm.gx--;else if(sm.gy>7)sm.gy--;
+          // ── Pathfinding: move along road toward town centre ──
+          // Path waypoints: spawn(right edge) → road col 10 → centre (8,8)
+          siegeMonsterStep(sm, dt);
         }
       }
       // Adventurers fight siege monsters
@@ -2200,12 +2321,17 @@ function launchSiege(){
     const proto=wt[Math.floor(Math.random()*wt.length)];
     // Scale up for siege
     const hpMult=1+G.townLevel*0.3;
+    // Spawn at right edge, staggered on road rows (7,8) ± small offset
+    const spawnGX=G.gridW-1;
+    const spawnGY=7+Math.floor(Math.random()*2);
+    const spawnScreen=gridToScreen(spawnGX,spawnGY);
     G.siege.siegeMonsters.push({
       ...proto,
-      gx:G.gridW-3-Math.floor(Math.random()*3),
-      gy:Math.floor(Math.random()*G.gridH),
+      gx:spawnGX, gy:spawnGY,
+      screenX:spawnScreen.x+Math.random()*20,
+      screenY:spawnScreen.y+Math.random()*10,
       hp:Math.floor(proto.hp*hpMult),maxHp:Math.floor(proto.hp*hpMult),
-      dead:false,attackTimer:0,isSiege:true,
+      dead:false,attackTimer:0,isSiege:true,_wpIdx:0,
     });
   }
   const alert=document.getElementById('siege-alert');
@@ -2213,6 +2339,52 @@ function launchSiege(){
   alert.textContent=`👹 攻城！${waveSize}隻怪物衝向村莊！`;
   addLog(`🚨 攻城！${waveSize}隻怪物進攻村莊！`,'combat');
   setTimeout(()=>{if(!G.siege.active)alert.style.display='none';},3000);
+}
+
+/* ── Siege monster pathfinding ──
+   Waypoints lead from right edge → vertical road (col 10/11)
+   → horizontal road (row 7/8) → town centre buildings
+*/
+const SIEGE_WAYPOINTS=[
+  {gx:19,gy:8},   // enter from right side on road row
+  {gx:13,gy:8},   // reach east wall / road junction
+  {gx:10,gy:8},   // main vertical road
+  {gx:10,gy:7},   // turn onto horizontal road
+  {gx:7, gy:7},   // approach town centre
+  {gx:5, gy:7},   // deep into town
+];
+
+function siegeMonsterStep(sm, dt){
+  // Init waypoint index if not set
+  if(sm._wpIdx===undefined) sm._wpIdx=0;
+  const wp=SIEGE_WAYPOINTS[sm._wpIdx];
+  if(!wp)return;
+
+  // Move screen position toward waypoint grid pos
+  const target=gridToScreen(wp.gx, wp.gy);
+  const tx=target.x, ty=target.y;
+
+  if(sm.screenX===undefined){
+    const s=gridToScreen(sm.gx,sm.gy);
+    sm.screenX=s.x; sm.screenY=s.y;
+  }
+
+  const dx=tx-sm.screenX, dy=ty-sm.screenY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const spd=35*G.speed; // slower than adventurers — menacing walk
+
+  if(dist<8){
+    // Reached waypoint — snap grid pos and advance
+    sm.gx=wp.gx; sm.gy=wp.gy;
+    sm._wpIdx=Math.min(sm._wpIdx+1, SIEGE_WAYPOINTS.length-1);
+  } else {
+    sm.screenX+=(dx/dist)*spd*dt;
+    sm.screenY+=(dy/dist)*spd*dt;
+    // Update grid position to nearest grid for collision detection
+    const g=screenToGrid(sm.screenX,sm.screenY);
+    sm.gx=Math.max(0,Math.min(G.gridW-1,g.x));
+    sm.gy=Math.max(0,Math.min(G.gridH-1,g.y));
+  }
 }
 
 function checkGameOver(){
@@ -2277,6 +2449,28 @@ function repairBuilding(gx,gy){
 /* ══════════════════════════════════════════════════════
    FORGE SYSTEM
 ══════════════════════════════════════════════════════ */
+function autoForgeIfPossible(){
+  if(!G.buildings.find(b=>b.id==='forge')) return;
+  let upgraded=false;
+  // Try each equipment in order (sword/armor priority over others)
+  const priority=['sword','armor','shield','bow','staff'];
+  for(const eqId of priority){
+    const eq=GAME_DATA.equipment.find(e=>e.id===eqId);if(!eq)continue;
+    const curTier=G.globalResources['eq_'+eqId]||0;
+    if(curTier>=eq.tiers.length-1)continue; // already max
+    const nextTier=eq.tiers[curTier+1];if(!nextTier)continue;
+    // Check if we have resources
+    const canAfford=Object.entries(nextTier.cost).every(([k,v])=>(G.globalResources[k]||0)>=v);
+    if(canAfford){
+      forgeUpgrade(eqId);
+      upgraded=true;
+      // Only auto-upgrade one item per gather to avoid silent mass-upgrading
+      break;
+    }
+  }
+  if(upgraded) G._buildPanelDirty=true;
+}
+
 function openForge(){
   const hasForge=G.buildings.find(b=>b.id==='forge');
   if(!hasForge){addLog('需要先建造打鐵店！','');return;}
@@ -2443,6 +2637,7 @@ function selectBuilding(bdata){
 
 function cancelPlacing(){
   G.placingBuilding=null;
+  G._buildPanelDirty=true;
   document.getElementById('place-hint').style.display='none';
   document.querySelectorAll('.build-card').forEach(c=>c.classList.remove('selected'));
 }
@@ -2451,6 +2646,7 @@ function placeBuilding(bdata,gx,gy){
   if(G.gold<bdata.cost){addLog('💸 金幣不足！','');return;}
   G.gold-=bdata.cost;G.grid[gy][gx]=2;
   G.buildings.push({id:bdata.id,gx,gy,level:1});
+  buildingCacheDirty=true;
   addLog(`🏗 建造了 ${bdata.emoji}${bdata.name}！費用 ${bdata.cost}金`,'build');
   G.popularity+=bdata.popularity;G.townExp+=bdata.cost*0.1;
   cancelPlacing();buildBuildPanel();updateTopBar();checkTownLevelUp();
@@ -2478,9 +2674,18 @@ function showBuildingInfo(b){
       🏚 HP: <span style="color:${hpPct>0.5?'var(--green-hi)':hpPct>0.25?'var(--gold)':'var(--red-hi)'}">${Math.ceil(b.hp)}/${b.maxHp}</span>
       ${b.hp<b.maxHp?`<button class="forge-btn" style="margin-left:6px;font-size:17px;padding:2px 6px;" onclick="repairBuilding(${b.gx},${b.gy})">🔧 修復 (${repairCost}💰)</button>`:''}
     </div>
-    ${b.level<3?`<div id="bld-upgrade-btn" class="${canUpgrade?'':'disabled'}" onclick="${canUpgrade?`upgradeBuilding(${b.gx},${b.gy})`:''}">
-      ⬆ 升級至 Lv.${b.level+1} (${upgradeCost}💰)
-    </div>`:'<div style="font-size:13px;color:var(--gold);">✅ 已達最高等級</div>'}`;
+    ${b.level<3
+      ? `<div id="bld-upgrade-btn" class="${canUpgrade?'':'disabled'}" onclick="${canUpgrade?`upgradeBuilding(${b.gx},${b.gy})`:''}">
+          ⬆ 升級至 Lv.${b.level+1} (${upgradeCost}💰)
+         </div>`
+      : `<div style="font-size:12px;color:var(--gold);margin-bottom:4px;">✅ 最高等級</div>
+         <div id="bld-upgrade-btn" class="${G.gold>=(d.cost*2)&&!(b.refined)?'':'disabled'}"
+              onclick="${!(b.refined)&&G.gold>=(d.cost*2)?`refineBuilding(${b.gx},${b.gy})`:''}">
+           ${b.refined
+             ? `✨ 已精煉 — ${b.refinedBonus||'特殊效果啟動'}`
+             : `✨ 精煉 (${d.cost*2}💰) — 解鎖特殊效果`}
+         </div>`
+    }`;
 }
 
 function upgradeBuilding(gx,gy){
@@ -2489,6 +2694,7 @@ function upgradeBuilding(gx,gy){
   const cost=Math.floor(d.cost*(b.level*0.8));
   if(G.gold<cost){addLog('💸 金幣不足！','');return;}
   G.gold-=cost;b.level++;
+  buildingCacheDirty=true;
   addLog(`⬆ ${d.emoji}${d.name} 升級至 Lv.${b.level}！`,'build');
   applyResidentBonuses();showBuildingInfo(b);updateTopBar();
   G.townExp+=cost*0.15;checkTownLevelUp();
@@ -2497,6 +2703,27 @@ function upgradeBuilding(gx,gy){
 /* ══════════════════════════════════════════════════════
    QUEST SYSTEM
 ══════════════════════════════════════════════════════ */
+function showQuestCompleteEffect(questName, isMilestone){
+  // Big floating text in canvas centre
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const color=isMilestone?'#f0a500':'#52b788';
+  const text=isMilestone?`🏆 里程碑！${questName}`:`✅ 任務完成！${questName}`;
+  // Add to combatFX as long-lived centred text
+  combatFX.push({
+    x:cx, y:cy-20, text, color,
+    alpha:1, life:160, type:'questBanner',
+    tx:cx, ty:cy, age:0,
+  });
+  // Screen edge flash
+  G._questFlash={alpha:isMilestone?0.5:0.3, color, timer:40};
+  // Notif badge
+  const notif=document.getElementById('quest-notif');
+  if(notif)notif.style.display='inline-block';
+}
+
+// Draw quest banner FX in render (add to FX loop)
+// (handled inline in the FX loop via type==='questBanner')
+
 function updateQuestProgress(){
   let hasNew=false;
   GAME_DATA.quests.forEach(q=>{
@@ -2516,6 +2743,7 @@ function updateQuestProgress(){
     if(G.quests[q.id].progress>=q.target&&prev<q.target){
       hasNew=true;
       addLog(`📜 任務完成！「${q.name}」— 點擊任務欄領取獎勵`,'quest');
+      showQuestCompleteEffect(q.name, q.milestone);
     }
   });
   if(hasNew){
@@ -2710,7 +2938,13 @@ function endDungeonBattle(won){
 
 function returnFromDungeon(){
   const D=G.dungeon;
-  if(D&&D.hero)D.hero.state='EnterTown';
+  if(D&&D.hero){
+    D.hero.state='EnterTown';
+    // Show brief "returning" status on adventurer card
+    D.hero._dungeonReturnMsg=true;
+    setTimeout(()=>{ if(D.hero) D.hero._dungeonReturnMsg=false; }, 4000);
+    addLog(`🏃 ${D.hero.name} 正在返回村莊...`,'');
+  }
   document.getElementById('dungeon-floor-list').style.display='block';
   document.getElementById('dungeon-battle').style.display='none';
   ['ba-attack','ba-skill','ba-item','ba-flee'].forEach(id=>{document.getElementById(id).className='ba-btn';});
@@ -2926,7 +3160,7 @@ function buildAdvPanel(){
   G.adventurers.forEach(adv=>{
     const cls=GAME_DATA.adventurerClasses.find(c=>c.id===adv.classId);
     const stMap={'EnterTown':'state-town','Idle':'state-town','MovingToFacility':'state-moving','Shopping':'state-shopping','Resting':'state-resting','ExploringField':'state-field','Combat':'state-combat','InDungeon':'state-dungeon'};
-    const slMap={'EnterTown':'進城','Idle':'待機','MovingToFacility':'移動','Shopping':'購物','Resting':'休息','ExploringField':'探索','Combat':'戰鬥','InDungeon':'地下城'};
+    const slMap={'EnterTown':'進城','Idle':'待機','MovingToFacility':'移動','Shopping':'購物','Resting':'休息','ExploringField':'探索','Combat':'戰鬥','InDungeon':'⚔地下城中','GatheringResource':'採集'};
     const div=document.createElement('div');
     div.className=`adv-row${adv.isResident?' resident':''}`;
     div.innerHTML=`
@@ -2940,10 +3174,12 @@ function buildAdvPanel(){
         <div class="bar-row"><span class="bar-lbl">😊</span><div class="bar-track"><div class="bar-fill bar-sat" style="width:${adv.satisfaction}%"></div></div><span class="bar-val">${Math.floor(adv.satisfaction)}%</span></div>
         <div class="bar-row"><span class="bar-lbl">EXP</span><div class="bar-track"><div class="bar-fill bar-exp" style="width:${adv.exp/adv.expNeeded*100}%"></div></div><span class="bar-val">${Math.floor(adv.exp)}</span></div>
       </div>
-      <div style="display:flex;gap:5px;margin-top:4px;font-size:17px;color:var(--text-dim);flex-wrap:wrap;">
+      <div style="display:flex;gap:5px;margin-top:4px;font-size:12px;color:var(--text-dim);flex-wrap:wrap;">
         <span>⚔${adv.atk}</span><span>🛡${adv.def}</span><span>✨MP${Math.floor(adv.mp)}/${adv.mpMax}</span>
         ${adv.shieldLevel>0?`<span style="color:#88ccff;">🛡×${adv.shieldLevel} ${Math.round((adv.blockChance||0)*100)}%格擋</span>`:''}
         ${adv.isResident?'<span style="color:var(--gold);">👑居民</span>':''}
+        ${adv.state==='InDungeon'?`<span style="color:var(--orange-hi);">🗝 ${G.dungeon&&G.dungeon.floorData?G.dungeon.floorData.name:'地下城'}中</span>`:''}
+        ${adv._dungeonReturnMsg?'<span style="color:var(--blue-hi);">🏃 返回中...</span>':''}
       </div>`;
     c.appendChild(div);
   });
@@ -2992,10 +3228,29 @@ function gameLoop(ts){
   render();
   panelTimer+=dt;
   if(panelTimer>0.6){
-    panelTimer=0;updateTopBar();buildBuildPanel();
-    if(document.getElementById('right-tab-adventurers').style.display!=='none')buildAdvPanel();
-    if(document.getElementById('right-tab-residents').style.display!=='none')buildResidentPanel();
-    if(document.getElementById('left-tab-quest').style.display!=='none')buildQuestPanel();
+    panelTimer=0;
+    // ── Smart dirty updates ──
+    updateTopBar();
+    // Build panel: only rebuild if gold changed (affects affordability)
+    const goldNow=Math.floor(G.gold);
+    if(goldNow!==G._lastPanelGold||G._buildPanelDirty){
+      G._lastPanelGold=goldNow; G._buildPanelDirty=false;
+      buildBuildPanel();
+    }
+    // Adv panel: only rebuild if adv count, states or HP changed
+    if(document.getElementById('right-tab-adventurers').style.display!=='none'){
+      const advKey=G.adventurers.map(a=>`${a.state}${Math.floor(a.hp)}${Math.floor(a.gold)}${Math.floor(a.satisfaction)}`).join('|');
+      if(advKey!==G._lastAdvKey){G._lastAdvKey=advKey;buildAdvPanel();}
+    }
+    // Resident panel: only rebuild when resident count changes
+    if(document.getElementById('right-tab-residents').style.display!=='none'){
+      if(G.residents.length!==G._lastResCount){G._lastResCount=G.residents.length;buildResidentPanel();}
+    }
+    // Quest panel: only rebuild when progress changes
+    if(document.getElementById('left-tab-quest').style.display!=='none'){
+      const questKey=Object.values(G.quests).map(q=>q.progress+'|'+q.claimed).join(',');
+      if(questKey!==G._lastQuestKey){G._lastQuestKey=questKey;buildQuestPanel();}
+    }
   }
   requestAnimationFrame(gameLoop);
 }
