@@ -540,27 +540,20 @@ export function render() {
     })
   }
 
-  // Construction scaffolding
+  // Construction indicator
   G.buildings.forEach(b => {
     if (!b.constructing) return
     const { x, y } = gridToScreen(b.gx, b.gy)
     const bh = 28 + (b.level || 1) * 5
     const pct = b.constructTimer / b.constructTime
     ctx.save()
-    ctx.globalAlpha = 0.85
-    ctx.fillStyle = '#8B6914'
-    ctx.fillRect(x - ISO_W / 2 + 2, y - bh - 4, 4, bh + 4)
-    ctx.fillRect(x + ISO_W / 2 - 6, y - bh - 4, 4, bh + 4)
-    for (let ri = 0; ri < 3; ri++) {
-      const ry = y - bh * (0.25 + ri * 0.3)
-      ctx.fillStyle = '#a07820'
-      ctx.fillRect(x - ISO_W / 2 + 2, ry, ISO_W - 4, 3)
-    }
+    ctx.font = '22px sans-serif'; ctx.textAlign = 'center'
+    ctx.fillText('🔧', x, y - bh + 6)
     ctx.globalAlpha = 1
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 14, y - bh - 16, 28, 6)
     ctx.fillStyle = '#f0a500'; ctx.fillRect(x - 13, y - bh - 15, 26 * pct, 4)
-    ctx.font = '8px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'
-    ctx.fillText('🔨 ' + Math.ceil((1 - pct) * b.constructTime) + 's', x, y - bh - 20)
+    ctx.font = '8px sans-serif'; ctx.fillStyle = '#fff'
+    ctx.fillText(Math.ceil((1 - pct) * b.constructTime) + 's', x, y - bh - 20)
     ctx.restore()
   })
 
