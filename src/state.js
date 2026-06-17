@@ -37,6 +37,10 @@ export const G = {
   buildingCacheDirty: true, buildingCacheKey: '',
   // FSM
   advIdCounter: 1,
+  // Difficulty
+  difficulty: 'normal',
+  _monsterAtkMult: 1,
+  _monsterHpMult: 1,
 }
 
 export function initState() {

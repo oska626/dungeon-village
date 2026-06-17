@@ -74,6 +74,7 @@
   <button class="btn-action" style="background:linear-gradient(180deg,#8b4513,#3a1a00);border-color:#d4600a;" onclick="openForge()">打鐵 🔨</button>
   <button class="btn-action" onclick="openWallMenu()">城牆 🏰</button>
   <button class="btn-action" onclick="forceLevelUp()">升村 ⬆</button>
+  <button class="btn-action" style="background:linear-gradient(180deg,#1a3a1a,#0a1a0a);border-color:var(--green-hi);" onclick="manualSave()">💾 存檔</button>
 </div>
 
 <div class="place-hint" id="place-hint">點擊空格放置 (右鍵取消)</div>
@@ -129,6 +130,67 @@
     <p id="lu-msg"></p>
     <div class="lu-rewards" id="lu-rewards"></div>
     <button class="btn-action" onclick="closeLevelUp()" style="font-size:13px;padding:8px 18px;">繼續！</button>
+  </div>
+</div>
+
+<!-- SAVE INDICATOR -->
+<div id="save-indicator">💾 已存檔</div>
+
+<!-- START MENU -->
+<div id="start-overlay">
+  <div class="start-bg-stars" id="star-canvas-bg"></div>
+  <div class="start-box">
+    <div class="start-title">🏰<br>山寨物語</div>
+    <div class="start-subtitle">— Dungeon Village —</div>
+    <button class="start-btn primary" id="btn-new-game">⚔ 新遊戲</button>
+    <button class="start-btn" id="btn-load-game">📂 讀取存檔</button>
+    <div class="start-save-info" id="save-preview" style="display:none"></div>
+    <button class="start-btn" id="btn-options">⚙ 選項</button>
+  </div>
+  <div class="start-version">v0.2 · 山寨物語</div>
+</div>
+
+<!-- OPTIONS OVERLAY -->
+<div id="options-overlay">
+  <div id="options-box">
+    <h2>⚙ 遊戲選項</h2>
+    <div class="opt-section">
+      <div class="opt-label">難度設定</div>
+      <div class="diff-cards">
+        <div class="diff-card easy" data-diff="easy">
+          <div class="dc-label">簡單</div>
+          <div class="dc-desc">收入×1.5<br>攻城間隔延長<br>怪物較弱</div>
+        </div>
+        <div class="diff-card selected" data-diff="normal">
+          <div class="dc-label">普通</div>
+          <div class="dc-desc">標準設定<br>原汁原味<br>推薦首玩</div>
+        </div>
+        <div class="diff-card hard" data-diff="hard">
+          <div class="dc-label">困難</div>
+          <div class="dc-desc">收入×0.7<br>攻城頻繁<br>怪物強化</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-section">
+      <div class="opt-row">
+        <span class="opt-row-label">音效</span>
+        <div class="opt-toggle">
+          <button class="opt-toggle-btn active" id="sfx-on">開</button>
+          <button class="opt-toggle-btn" id="sfx-off">關</button>
+        </div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-row-label">動畫粒子效果</span>
+        <div class="opt-toggle">
+          <button class="opt-toggle-btn active" id="fx-on">開</button>
+          <button class="opt-toggle-btn" id="fx-off">關</button>
+        </div>
+      </div>
+    </div>
+    <div class="opt-btn-row">
+      <button class="start-btn" id="btn-options-confirm" style="width:auto;padding:10px 28px;">確認</button>
+      <button class="start-btn" id="btn-delete-save" style="width:auto;padding:10px 28px;border-color:var(--red-hi);color:var(--red-hi);">🗑 刪除存檔</button>
+    </div>
   </div>
 </div>
 

@@ -49,7 +49,8 @@ export function launchSiege() {
   const wt = []; GAME_DATA.monsters.forEach(m => { for (let i = 0; i < m.spawnWeight; i++) wt.push(m) })
   for (let i = 0; i < waveSize; i++) {
     const proto = wt[Math.floor(Math.random() * wt.length)]
-    const hpMult = 1 + G.townLevel * 0.3
+    const hpMult = (1 + G.townLevel * 0.3) * (G._monsterHpMult || 1)
+    const atkMult = G._monsterAtkMult || 1
     const spawnGX = G.gridW - 1, spawnGY = 7 + Math.floor(Math.random() * 2)
     const spawnScreen = gridToScreen(spawnGX, spawnGY)
     G.siege.siegeMonsters.push({
@@ -57,6 +58,7 @@ export function launchSiege() {
       gx: spawnGX, gy: spawnGY,
       screenX: spawnScreen.x + Math.random() * 20, screenY: spawnScreen.y + Math.random() * 10,
       hp: Math.floor(proto.hp * hpMult), maxHp: Math.floor(proto.hp * hpMult),
+      atk: Math.floor(proto.atk * atkMult),
       dead: false, attackTimer: 0, isSiege: true, _wpIdx: 0,
     })
   }
