@@ -47,9 +47,16 @@ export const SIEGE_WAYPOINTS = [
   { gx: 5,  gy: 7 },
 ]
 
+const WALL_GX = 13  // wall boundary x position
+
 function siegeMonsterStep(sm, dt) {
   if (sm._wpIdx === undefined) sm._wpIdx = 0
   const wp = SIEGE_WAYPOINTS[sm._wpIdx]; if (!wp) return
+
+  // Block at wall if it's still standing
+  const wallAlive = G.wall.level > 0 && G.wall.hp > 0
+  if (wallAlive && wp.gx < WALL_GX) return  // don't advance past wall waypoints
+
   const target = gridToScreen(wp.gx, wp.gy)
   const tx = target.x, ty = target.y
   if (sm.screenX === undefined) { const s = gridToScreen(sm.gx, sm.gy); sm.screenX = s.x; sm.screenY = s.y }
@@ -172,7 +179,20 @@ export function tickSiege(dt) {
       sm.attackTimer = (sm.attackTimer || 0) + dt * G.speed
       if (sm.attackTimer > 1.2) {
         sm.attackTimer = 0
-        const target = G.buildings.find(b => Math.abs(b.gx - sm.gx) <= 2 && Math.abs(b.gy - sm.gy) <= 2)
+        // Attack wall if alive and monster is near wall
+        const wallAlive = G.wall.level > 0 && G.wall.hp > 0
+        if (wallAlive && sm.gx >= WALL_GX - 2) {
+          const dmg = (sm.atk || 8) * 0.8
+          G.wall.hp = Math.max(0, G.wall.hp - dmg)
+          const { x, y } = gridToScreen(WALL_GX, sm.gy)
+          addCombatFX(x, y - 20, '-' + Math.ceil(dmg), '#ff8800', 'text')
+          if (G.wall.hp <= 0) {
+            addLog('💥 城牆被摧毀！怪物湧入村莊！', 'combat')
+            spawnParticles(x, y - 10, '#ff4400', 8, 12, 3)
+          }
+          return
+        }
+        const target = G.buildings.find(b => !wallAlive && Math.abs(b.gx - sm.gx) <= 2 && Math.abs(b.gy - sm.gy) <= 2)
         if (target) {
           if (target.hp === undefined) { target.maxHp = 100 + target.level * 50; target.hp = target.maxHp }
           const dmg = sm.atk || 8
@@ -215,14 +235,6 @@ export function tickSiege(dt) {
     }
   }
 
-  if (G.siege.active && G.wall.level > 0) {
-    G.siege.siegeMonsters.forEach(sm => {
-      if (sm.gx >= 12 && sm.gx <= 14) {
-        G.wall.hp = Math.max(0, G.wall.hp - sm.atk * 0.3 * dt * G.speed)
-        if (G.wall.hp <= 0 && G.wall.level > 0) addLog('💥 城牆被摧毀！', 'combat')
-      }
-    })
-  }
 }
 
 // ── Wall ──
