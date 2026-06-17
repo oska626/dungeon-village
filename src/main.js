@@ -143,10 +143,13 @@ function restartGame() {
     wall:{ level:0, hp:0, maxHp:0 },
     resourceNodes:[], globalResources:{ wood:0, stone:0, iron:0, water:0, crystal:0 },
     siege:{ active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false },
+    nightSiege:{ timer:0, nextIn:90 },
     gameOver:false, bounty:{ active:false, elite:null },
     _lastPanelGold:-1, _buildPanelDirty:true, _lastAdvKey:'', _lastResCount:-1,
     _lastQuestKey:'', _usedNames:null, _questFlash:null,
     buildingCacheDirty:true, buildingCacheKey:'', advIdCounter:1,
+    difficulty:'normal', _monsterAtkMult:1, _monsterHpMult:1,
+    timeOfDay:0, dayPhase:'day', paused:false,
     tutorial:{ active:true, step:0, steps:[
       { id:'build_house',  text:'建造一間房屋',           done:false },
       { id:'recruit',      text:'招募第一位冒險者',       done:false },

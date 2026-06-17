@@ -3,9 +3,8 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen, screenToGrid, addCombatFX, spawnParticles } from './render.js'
 import { addLog, updateQuestProgress } from './ui.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
-import { stopAll } from './audio.js'
+import { stopAll, playTrack } from './audio.js'
 import { applyResidentBonuses, setState } from './fsm.js'
-import { playTrack } from './audio.js'
 
 // ── Construction ticking ──
 export function tickConstruction(dt) {
@@ -213,7 +212,7 @@ export function tickSiege(dt) {
                 }
               })
             }
-            G.buildings.splice(G.buildings.indexOf(target), 1)
+            const tIdx = G.buildings.indexOf(target); if (tIdx !== -1) G.buildings.splice(tIdx, 1)
             if (G.selectedBuildingOnMap === target) G.selectedBuildingOnMap = null
             G.buildingCacheDirty = true
             checkGameOver()

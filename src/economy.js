@@ -85,7 +85,7 @@ export function tickEconomy(dt) {
       if (b.id === 'cake_shop') G.satisfaction = Math.min(100, G.satisfaction + 3 * dt * G.speed / G.dayLength)
       if (b.id === 'market') G.gold += 50 * dt * G.speed / G.dayLength
       if (b.id === 'inn') G.adventurers.forEach(a => { if (a.state === 'Resting' || a.state === 'Idle') a.hp = Math.min(a.maxHp, a.hp + a.maxHp * 0.05 * dt * G.speed / G.dayLength) })
-      if (b.id === 'weapon_shop' && Math.random() < dt * G.speed * 0.001) G.adventurers.forEach(a => { a.atk += 0.01 })
+      // weapon_shop refined: +1 ATK per day handled in end-of-day block below
     }
   })
   G.popularity += G.buildings.length * 0.002 * dt * G.speed
@@ -97,13 +97,15 @@ export function tickEconomy(dt) {
     document.getElementById('day-num').textContent = G.day
     addLog(`第${G.day}天 — 日收入 ${Math.floor(G.townIncome)}金 | 人氣:${Math.floor(G.popularity)} | 滿足:${Math.floor(G.satisfaction)}`, 'earn')
     G.townIncome = 0
+    if (G.buildings.find(b => b.id === 'weapon_shop' && b.refined))
+      G.adventurers.forEach(a => { a.atk += 1 })
     updateQuestProgress()
     if (G.adventurers.length < G.maxAdventurers && Math.random() < 0.25 + G.popularity / 300) {
       const adv = createAdventurer()
       const sp = gridToScreen(0, 7); adv.screenX = sp.x - 10; adv.screenY = sp.y
       G.adventurers.push(adv)
       const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
-      addLog(`🧙 ${adv.name} (${cls.name}) 加入了村莊！`, 'level')
+      addLog(`🧙 ${adv.name} (${cls ? cls.name : '???'}) 加入了村莊！`, 'level')
       document.getElementById('adv-count-val').textContent = G.adventurers.length
     }
     G.maxAdventurers = 4 + G.townLevel * 2 + G.residents.filter(r => r.residentJob?.id === 'guildmaster').length * 3

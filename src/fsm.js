@@ -84,7 +84,7 @@ export function checkAdvLevelUp(adv) {
     adv.exp -= adv.expNeeded; adv.level++
     const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
     adv.maxHp += 20; adv.hp = adv.maxHp; adv.atk += 3; adv.def += 2; adv.mpMax += 1; adv.mp = adv.mpMax
-    adv.expNeeded = cls.expToLevel * adv.level
+    if (cls) adv.expNeeded = cls.expToLevel * adv.level
     addLog(`🎉 ${adv.name} 升至 Lv.${adv.level}！`, 'level')
     G.popularity += 2
   }
@@ -118,6 +118,7 @@ export function promoteResident(adv) {
 
 export function applyResidentBonuses() {
   G.atkBuff = 0; G.defBuff = 0; G.expBuff = 0; G.satisfactionBuff = 0; G.incomeBuff = 1
+  G.maxAdventurers = 4 + G.townLevel * 2
   G.buildings.forEach(b => {
     const d = GAME_DATA.buildings.find(x => x.id === b.id); if (!d) return
     const mult = 1 + (b.level - 1) * 0.5
@@ -242,7 +243,7 @@ export function updateAdventurer(adv, dt) {
       if (adv.stateTimer > 3 / G.speed) {
         adv.stateTimer = 0
         const vacantHouse = G.buildings.find(b =>
-          b.id === 'house' && !G.adventurers.some(a => a !== adv && a.homeGX === b.gx && a.homeGY === b.gy)
+          b.id === 'house' && !b.constructing && !G.adventurers.some(a => a !== adv && a.homeGX === b.gx && a.homeGY === b.gy)
         )
         if (vacantHouse) {
           adv.homeGX = vacantHouse.gx; adv.homeGY = vacantHouse.gy; adv.isHomeless = false
@@ -503,7 +504,10 @@ export function updateAdventurer(adv, dt) {
             addCombatFX(ax, ay - 18, '-' + dmgToAdv, '#ff8833', 'text')
             spawnParticles(ax, ay - 10, '#ff6644', 4, 10, 1.8)
             // Passive: dark aura — reflect 10% damage back
-            if (adv._darkAura) { const reflect = Math.floor(dmgToAdv * 0.1); m.hp -= reflect }
+            if (adv._darkAura) {
+              const reflect = Math.floor(dmgToAdv * 0.1); m.hp -= reflect
+              if (m.hp <= 0 && !m.dead) { m.dead = true; setTimeout(() => { const i = G.monsters.indexOf(m); if (i > -1) G.monsters.splice(i, 1) }, 1200) }
+            }
             if (adv.hp <= 0) {
               adv.hp = 1; adv._attackPose = 0; adv.restTimer = 10
               addLog(`💔 ${adv.name} 倒下了！需要回家休息 10 秒...`, 'combat')

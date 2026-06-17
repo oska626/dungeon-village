@@ -324,7 +324,7 @@ function drawPixelSprite(spriteData, cx, cy, scale, flipX, walkFrame) {
 
 // ── Draw adventurer ──
 function drawAdventurer(adv) {
-  if (!adv.screenX) return
+  if (adv.screenX == null) return
   const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId); if (!cls) return
   const x = adv.screenX, y = adv.screenY
   const scale = 2

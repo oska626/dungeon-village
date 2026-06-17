@@ -1,6 +1,6 @@
 import { G } from './state.js'
 import { GAME_DATA } from './data.js'
-import { canvas, combatFX } from './render.js'
+import { canvas, combatFX, gridToScreen } from './render.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp, depositToTown } from './economy.js'
 import { applyResidentBonuses, recalcSynergies, createAdventurer, checkAdvLevelUp, promoteResident, applySkillPassive } from './fsm.js'
 import { repairBuilding, openForge, buildForgeUI, forgeUpgrade, upgradeWall, repairWall, openWallMenu, closeWallMenu } from './systems.js'
@@ -120,7 +120,7 @@ export function showBuildingInfo(b) {
 
 export function refineBuilding(gx, gy) {
   const b = G.buildings.find(b => b.gx === gx && b.gy === gy); if (!b || b.refined) return
-  const d = GAME_DATA.buildings.find(x => x.id === b.id)
+  const d = GAME_DATA.buildings.find(x => x.id === b.id); if (!d) return
   const cost = d.cost * 2
   if (G.gold < cost) { addLog(`精煉需要 ${cost}金`, ''); return }
   G.gold -= cost; b.refined = true
@@ -139,7 +139,7 @@ export function refineBuilding(gx, gy) {
 // ── Build panel ──
 export function buildBuildPanel() {
   const c = document.getElementById('left-tab-build')
-  const vacantHouses = G.buildings.filter(b => b.id === 'house' && !G.adventurers.some(a => a.homeGX === b.gx && a.homeGY === b.gy)).length
+  const vacantHouses = G.buildings.filter(b => b.id === 'house' && !b.constructing && !G.adventurers.some(a => a.homeGX === b.gx && a.homeGY === b.gy)).length
   const totalHouses = G.buildings.filter(b => b.id === 'house').length
   c.innerHTML = `<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">選擇建築後點擊地圖空格放置</div>
     <div style="font-size:11px;background:rgba(0,0,0,.3);border-radius:4px;padding:4px 7px;margin-bottom:7px;display:flex;align-items:center;gap:6px;">
@@ -472,7 +472,7 @@ export function setSpeed(s) {
 
 // ── Recruit / Bounty / Force level ──
 function getVacantHouse() {
-  return G.buildings.find(b => b.id === 'house' && !G.adventurers.some(a => a.homeGX === b.gx && a.homeGY === b.gy))
+  return G.buildings.find(b => b.id === 'house' && !b.constructing && !G.adventurers.some(a => a.homeGX === b.gx && a.homeGY === b.gy))
 }
 
 export function recruitAdventurer() {
@@ -484,9 +484,7 @@ export function recruitAdventurer() {
   G.gold -= cost
   const adv = createAdventurer()
   adv.homeGX = house.gx; adv.homeGY = house.gy; adv.isHomeless = false
-  const sp = import('./render.js').then(r => {
-    adv.screenX = r.gridToScreen(0, 7).x - 15; adv.screenY = r.gridToScreen(0, 7).y
-  })
+  const sp = gridToScreen(0, 7); adv.screenX = sp.x - 15; adv.screenY = sp.y
   G.adventurers.push(adv)
   const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
   addLog('💎 招募了 ' + (cls ? cls.emoji : '') + adv.name + ' (' + (cls ? cls.name : '') + ') 住宅(' + house.gx + ',' + house.gy + ')', 'level')
