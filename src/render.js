@@ -21,6 +21,7 @@ loadImg('crossroad',    '/sprites/crossroad.png')
 loadImg('bld_house',        '/sprites/house.png')
 loadImg('bld_weapon_shop',  '/sprites/weapon_shop.png')
 loadImg('bld_inn',          '/sprites/inn.png')
+for (let i = 1; i <= 5; i++) loadImg('wall_' + i, '/sprites/walls/wall_' + i + '.png')
 
 const offscreen = document.createElement('canvas')
 const offCtx = offscreen.getContext('2d')
@@ -238,37 +239,36 @@ function drawBuilding3DTo(targetCtx, gx, gy, bdata, bLevel, synActive, isSelecte
 function drawTownWalls() {
   const wt = GAME_DATA.wallTiers[G.wall.level - 1]; if (!wt) return
   const hp = G.wall.hp / G.wall.maxHp
-  const TOWN_X_MAX = 13, TOWN_Y_MAX = 15
-  const wc = wt.color, h = 10 + G.wall.level * 3
+  const TOWN_X_MAX = 13
   const damaged = hp < 0.3
+  const img = IMG['wall_' + G.wall.level]
+  const useSprite = img?.complete && img.naturalWidth > 0
 
   ctx.save()
   if (damaged) ctx.globalAlpha = 0.75 + Math.sin(performance.now() / 120) * 0.25
 
-  const drawWallTile = (gx, gy) => {
-    const { x, y } = gridToScreen(gx, gy)
-    ctx.fillStyle = wc; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, h)
-    ctx.fillStyle = wt.topColor; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, 3)
-    if ((gx + gy) % 2 === 0) {
-      ctx.fillStyle = shadeColor(wt.topColor, 20)
-      ctx.fillRect(x - ISO_W / 2 + 2, y - h - 5, 7, 6)
-      ctx.fillRect(x + ISO_W / 2 - 9, y - h - 5, 7, 6)
+  // Only draw top and bottom horizontal rows
+  for (const gy of [0, 15]) {
+    for (let gx = 0; gx <= TOWN_X_MAX; gx++) {
+      const { x, y } = gridToScreen(gx, gy)
+      if (useSprite) {
+        const sw = ISO_W * 1.4
+        const sh = sw * (img.naturalHeight / img.naturalWidth)
+        ctx.drawImage(img, x - sw / 2, y + ISO_H - sh, sw, sh)
+      } else {
+        const h = 10 + G.wall.level * 3
+        ctx.fillStyle = wt.color; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, h)
+        ctx.fillStyle = wt.topColor; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, 3)
+        if ((gx + gy) % 2 === 0) {
+          ctx.fillStyle = shadeColor(wt.topColor, 20)
+          ctx.fillRect(x - ISO_W / 2 + 2, y - h - 5, 7, 6)
+          ctx.fillRect(x + ISO_W / 2 - 9, y - h - 5, 7, 6)
+        }
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.8
+        ctx.strokeRect(x - ISO_W / 2, y - h, ISO_W, h)
+      }
     }
-    if (hp < 0.5) {
-      ctx.fillStyle = `rgba(0,0,0,${0.5 * (1 - hp)})`
-      ctx.fillRect(x - 4, y - h + 2, 2, h - 4); ctx.fillRect(x + 6, y - h + 3, 1, h * 0.6)
-    }
-    if (G.wall.level === 5) {
-      ctx.shadowColor = '#9933ff'; ctx.shadowBlur = 6
-      ctx.strokeStyle = 'rgba(180,80,255,0.6)'; ctx.lineWidth = 1.5
-      ctx.strokeRect(x - ISO_W / 2, y - h, ISO_W, h); ctx.shadowBlur = 0
-    }
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.8
-    ctx.strokeRect(x - ISO_W / 2, y - h, ISO_W, h)
   }
-
-  for (let gx = 0; gx <= TOWN_X_MAX; gx++) { drawWallTile(gx, 0); drawWallTile(gx, TOWN_Y_MAX) }
-  for (let gy = 1; gy < TOWN_Y_MAX; gy++) { drawWallTile(0, gy); drawWallTile(TOWN_X_MAX, gy) }
   ctx.restore()
 
   const bw = 200, bx = canvas.width / 2 - bw / 2, by = 8
