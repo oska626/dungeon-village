@@ -13,6 +13,7 @@ import {
   openDungeonMenu, enterDungeon, battleAction, returnFromDungeon, closeDungeon,
   recruitAdventurer, triggerBounty, forceLevelUp,
   openSkillTree, closeSkillTree, confirmPromotion,
+  initTutorialPanel,
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
 import { initAudio, playTrack, setMusicEnabled, setMusicVolume } from './audio.js'
@@ -113,6 +114,7 @@ function initWorld() {
 // ── Start game (hide overlay, start loop) ──
 function startGameLoop() {
   document.getElementById('start-overlay').classList.add('hidden')
+  initTutorialPanel()
   resize()
   lastTime = performance.now()
   requestAnimationFrame(gameLoop)
@@ -144,6 +146,12 @@ function restartGame() {
     _lastPanelGold:-1, _buildPanelDirty:true, _lastAdvKey:'', _lastResCount:-1,
     _lastQuestKey:'', _usedNames:null, _questFlash:null,
     buildingCacheDirty:true, buildingCacheKey:'', advIdCounter:1,
+    tutorial:{ active:true, step:0, steps:[
+      { id:'build_house',  text:'建造一間房屋',           done:false },
+      { id:'recruit',      text:'招募第一位冒險者',       done:false },
+      { id:'build_shop',   text:'建造一間武器店或鎧甲店', done:false },
+      { id:'dungeon',      text:'送冒險者進入地下城',     done:false },
+    ]},
   }
   Object.assign(G, fresh)
   document.getElementById('gameover-overlay').classList.remove('show')

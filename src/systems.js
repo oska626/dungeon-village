@@ -93,16 +93,25 @@ function spawnSiegeWave(monsterPool, waveSize, label, alertText) {
 }
 
 export function launchSiege() {
-  // Wave size: scales with adventurers (1 per 2 adventurers), capped 8–10, grows with town level
   const advScale = Math.floor(G.adventurers.length / 2)
   const baseSize = 2 + Math.floor(G.townLevel * 1.2) + advScale
   const waveSize = Math.min(baseSize, 8 + Math.floor(G.townLevel / 3))
+  // During tutorial: cap wave at 1 monster, half atk
+  if (G.tutorial?.active) {
+    const savedAtk = G._monsterAtkMult
+    G._monsterAtkMult = (G._monsterAtkMult || 1) * 0.5
+    spawnSiegeWave(GAME_DATA.monsters, 1, '攻城', `👹 攻城！（教學模式：弱化怪物）`)
+    G._monsterAtkMult = savedAtk
+    return
+  }
   spawnSiegeWave(GAME_DATA.monsters, waveSize, '攻城', `👹 攻城！${waveSize}隻怪物衝向村莊！`)
 }
 
 export function launchNightRaid() {
   const advScale = Math.floor(G.adventurers.length / 2)
   const waveSize = Math.min(2 + Math.floor(G.townLevel * 0.8) + advScale, 6)
+  // During tutorial: skip night raids entirely
+  if (G.tutorial?.active) return
   spawnSiegeWave(GAME_DATA.nightMonsters, waveSize, '夜襲', `🌙 夜襲！${waveSize}隻夜間怪物出沒！`)
 }
 

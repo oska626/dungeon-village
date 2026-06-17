@@ -189,6 +189,9 @@ export function placeBuilding(bdata, gx, gy) {
   G.popularity += bdata.popularity; G.townExp += bdata.cost * 0.1
   cancelPlacing(); buildBuildPanel(); updateTopBar(); checkTownLevelUp()
   updateQuestProgress()
+  // Tutorial hooks
+  if (bdata.id === 'house') advanceTutorial('build_house')
+  if (bdata.id === 'weapon_shop' || bdata.id === 'armor_shop') advanceTutorial('build_shop')
 }
 
 export function instantCompleteBuilding(gx, gy) {
@@ -488,6 +491,7 @@ export function recruitAdventurer() {
   const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
   addLog('💎 招募了 ' + (cls ? cls.emoji : '') + adv.name + ' (' + (cls ? cls.name : '') + ') 住宅(' + house.gx + ',' + house.gy + ')', 'level')
   updateTopBar(); updateQuestProgress(); G._buildPanelDirty = true
+  advanceTutorial('recruit')
 }
 
 const ELITE_TYPES = [
@@ -566,6 +570,7 @@ export function enterDungeon(dungeonId, floorIndex) {
   const fl = dg.floors_data[floorIndex]
   const monProto = GAME_DATA.monsters.find(m => m.id === fl.monsters[Math.floor(Math.random() * fl.monsters.length)])
   hero.state = 'InDungeon'
+  advanceTutorial('dungeon')
   const cls = GAME_DATA.adventurerClasses.find(c => c.id === hero.classId)
   G.dungeon = {
     active: true, hero, dungeonId, floorIndex, floorData: fl,
@@ -690,3 +695,68 @@ export function closeDungeon() {
   document.getElementById('dungeon-battle').style.display = 'none'
   ;['ba-attack', 'ba-skill', 'ba-item', 'ba-flee'].forEach(id => { document.getElementById(id).className = 'ba-btn' })
 }
+
+// ── Tutorial ─────────────────────────────────────────────────────────────────
+export function initTutorialPanel() {
+  const panel = document.getElementById('tutorial-panel')
+  if (!panel) return
+  renderTutorialPanel()
+}
+
+export function renderTutorialPanel() {
+  const tut = G.tutorial
+  const panel = document.getElementById('tutorial-panel')
+  if (!panel) return
+  if (!tut.active || tut.step >= tut.steps.length) {
+    panel.style.display = 'none'
+    return
+  }
+  panel.style.display = 'block'
+  const current = tut.steps[tut.step]
+  const items = tut.steps.map((s, i) => {
+    const done = i < tut.step
+    const active = i === tut.step
+    return `<div class="tut-step ${done ? 'done' : ''} ${active ? 'active' : ''}">
+      <span class="tut-icon">${done ? '✅' : active ? '▶' : '○'}</span>
+      <span>${s.text}</span>
+    </div>`
+  }).join('')
+  panel.innerHTML = `
+    <div class="tut-header">📖 新手教學 <span class="tut-progress">${tut.step}/${tut.steps.length}</span></div>
+    <div class="tut-steps">${items}</div>
+    <div class="tut-hint">👆 ${current.text}</div>
+    <button class="tut-skip" onclick="skipTutorial()">跳過教學</button>
+  `
+}
+
+export function advanceTutorial(stepId) {
+  const tut = G.tutorial
+  if (!tut.active) return
+  if (tut.step >= tut.steps.length) return
+  if (tut.steps[tut.step].id !== stepId) return
+  tut.steps[tut.step].done = true
+  tut.step++
+  if (tut.step >= tut.steps.length) {
+    tut.active = false
+    const panel = document.getElementById('tutorial-panel')
+    if (panel) {
+      panel.innerHTML = '<div class="tut-complete">🎉 教學完成！祝你遊玩愉快！</div>'
+      panel.style.display = 'block'
+      setTimeout(() => { panel.style.display = 'none' }, 3000)
+    }
+    addLog('🎓 新手教學完成！怪物強度恢復正常。', 'level')
+    return
+  }
+  renderTutorialPanel()
+}
+
+export function skipTutorial() {
+  G.tutorial.active = false
+  G.tutorial.step = G.tutorial.steps.length
+  const panel = document.getElementById('tutorial-panel')
+  if (panel) panel.style.display = 'none'
+  addLog('📖 已跳過新手教學。', '')
+}
+
+// expose for onclick
+window.skipTutorial = skipTutorial

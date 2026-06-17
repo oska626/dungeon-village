@@ -310,3 +310,17 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .st-skill-desc{font-size:12px;color:var(--text-dim);line-height:1.4;}
 .st-skill-cd{font-size:11px;color:var(--orange-hi);}
 .st-select-hint{text-align:center;font-size:11px;color:var(--text-dim);margin-top:4px;letter-spacing:1px;}
+
+/* ── Tutorial Panel ── */
+#tutorial-panel{position:fixed;bottom:60px;left:220px;width:190px;background:rgba(10,15,25,.92);border:1px solid var(--gold);border-radius:10px;padding:12px;z-index:150;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+.tut-header{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.tut-progress{font-size:11px;color:var(--text-dim);background:rgba(255,255,255,.08);border-radius:10px;padding:1px 6px;}
+.tut-steps{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.tut-step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);padding:4px 6px;border-radius:6px;}
+.tut-step.active{color:var(--parchment);background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);}
+.tut-step.done{color:#55cc55;text-decoration:line-through;opacity:.7;}
+.tut-icon{font-size:13px;flex-shrink:0;}
+.tut-hint{font-size:11px;color:var(--orange-hi);background:rgba(255,150,0,.08);border-radius:6px;padding:5px 8px;margin-bottom:8px;line-height:1.4;}
+.tut-skip{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text-dim);font-size:11px;padding:4px;border-radius:5px;cursor:pointer;}
+.tut-skip:hover{background:rgba(255,255,255,.12);color:var(--parchment);}
+.tut-complete{font-size:14px;color:var(--gold);text-align:center;padding:4px 0;}

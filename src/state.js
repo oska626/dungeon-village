@@ -48,6 +48,17 @@ export const G = {
   nightSiege: { timer: 0, nextIn: 90 },
   // Pause (skill tree overlay)
   paused: false,
+  // Tutorial
+  tutorial: {
+    active: true,
+    step: 0,  // 0=未開始(等新遊戲), 1-4=進行中, 5=完成
+    steps: [
+      { id: 'build_house',   text: '建造一間房屋',           done: false },
+      { id: 'recruit',       text: '招募第一位冒險者',       done: false },
+      { id: 'build_shop',    text: '建造一間武器店或鎧甲店', done: false },
+      { id: 'dungeon',       text: '送冒險者進入地下城',     done: false },
+    ],
+  },
 }
 
 export function initState() {
