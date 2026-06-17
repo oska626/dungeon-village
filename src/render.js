@@ -262,26 +262,24 @@ function drawTownWalls() {
   ctx.save()
   if (damaged) ctx.globalAlpha = 0.75 + Math.sin(performance.now() / 120) * 0.25
 
-  // Only draw top and bottom horizontal rows
-  for (const gy of [0, 15]) {
-    for (let gx = 0; gx <= TOWN_X_MAX; gx++) {
-      const { x, y } = gridToScreen(gx, gy)
-      if (useSprite) {
-        const sw = ISO_W * 1.4
-        const sh = sw * (img.naturalHeight / img.naturalWidth)
-        ctx.drawImage(img, x - sw / 2, y + ISO_H - sh, sw, sh)
-      } else {
-        const h = 10 + G.wall.level * 3
-        ctx.fillStyle = wt.color; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, h)
-        ctx.fillStyle = wt.topColor; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, 3)
-        if ((gx + gy) % 2 === 0) {
-          ctx.fillStyle = shadeColor(wt.topColor, 20)
-          ctx.fillRect(x - ISO_W / 2 + 2, y - h - 5, 7, 6)
-          ctx.fillRect(x + ISO_W / 2 - 9, y - h - 5, 7, 6)
-        }
-        ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.8
-        ctx.strokeRect(x - ISO_W / 2, y - h, ISO_W, h)
+  // Draw vertical wall at right border of town (gx=TOWN_X_MAX), facing monsters
+  for (let gy = 0; gy < G.gridH; gy++) {
+    const { x, y } = gridToScreen(TOWN_X_MAX, gy)
+    if (useSprite) {
+      const sw = ISO_W * 1.4
+      const sh = sw * (img.naturalHeight / img.naturalWidth)
+      ctx.drawImage(img, x - sw / 2, y + ISO_H - sh, sw, sh)
+    } else {
+      const h = 10 + G.wall.level * 3
+      ctx.fillStyle = wt.color; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, h)
+      ctx.fillStyle = wt.topColor; ctx.fillRect(x - ISO_W / 2, y - h, ISO_W, 3)
+      if (gy % 2 === 0) {
+        ctx.fillStyle = shadeColor(wt.topColor, 20)
+        ctx.fillRect(x - ISO_W / 2 + 2, y - h - 5, 7, 6)
+        ctx.fillRect(x + ISO_W / 2 - 9, y - h - 5, 7, 6)
       }
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.8
+      ctx.strokeRect(x - ISO_W / 2, y - h, ISO_W, h)
     }
   }
   ctx.restore()

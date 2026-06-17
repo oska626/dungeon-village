@@ -87,3 +87,5 @@ export function initState() {
       constructing: true, constructTimer: 0, constructTime: 5 })
   })
 }
+
+if (typeof window !== 'undefined') window.__G = G

@@ -760,3 +760,6 @@ export function skipTutorial() {
 
 // expose for onclick
 window.skipTutorial = skipTutorial
+window.upgradeWall  = upgradeWall
+window.repairWall   = repairWall
+window.closeWallMenu = closeWallMenu
