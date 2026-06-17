@@ -144,8 +144,8 @@ function drawBuilding3DTo(targetCtx, gx, gy, bdata, bLevel, synActive, isSelecte
   const sprImg = IMG[sprKey]
   if (sprImg?.complete && sprImg.naturalWidth > 0) {
     if (synActive) { dc.save(); dc.shadowColor = 'gold'; dc.shadowBlur = 14 }
-    // Scale sprite: width = ISO_W * 2, anchor bottom-centre to tile centre
-    const sw = ISO_W * 2.2
+    // Scale sprite: fit within 1 tile width
+    const sw = ISO_W * 0.9
     const sh = sw * (sprImg.naturalHeight / sprImg.naturalWidth)
     dc.drawImage(sprImg, x - sw / 2, y + ISO_H - sh, sw, sh)
     // Level badge
