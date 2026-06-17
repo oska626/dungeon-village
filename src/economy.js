@@ -3,6 +3,7 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen } from './render.js'
 import { addLog, updateQuestProgress } from './ui.js'
 import { applyResidentBonuses, createAdventurer } from './fsm.js'
+import { playTrack } from './audio.js'
 
 export function updateTopBar() {
   document.getElementById('gold-val').textContent = Math.floor(G.gold)
@@ -69,6 +70,10 @@ export function tickEconomy(dt) {
     G.dayPhase = newPhase
     const phaseLabels = { dawn: '🌅 清晨', day: '☀️ 白天', dusk: '🌇 黃昏', night: '🌙 深夜' }
     addLog(phaseLabels[newPhase] + ' 來臨', newPhase === 'night' ? 'combat' : '')
+    // Switch BGM track based on phase (siege overrides this in systems.js)
+    if (!G.siege.active) {
+      playTrack(newPhase === 'night' ? 'night' : 'day')
+    }
   }
   G.buildings.forEach(b => {
     if (b.constructing) return  // no income while building

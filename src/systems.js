@@ -4,6 +4,7 @@ import { gridToScreen, screenToGrid, addCombatFX, spawnParticles } from './rende
 import { addLog, updateQuestProgress } from './ui.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
 import { applyResidentBonuses, setState } from './fsm.js'
+import { playTrack } from './audio.js'
 
 // ── Construction ticking ──
 export function tickConstruction(dt) {
@@ -88,6 +89,7 @@ function spawnSiegeWave(monsterPool, waveSize, label, alertText) {
   alertEl.style.display = 'block'; alertEl.textContent = alertText
   addLog(`🚨 ${label}！${waveSize}隻怪物進攻村莊！`, 'combat')
   setTimeout(() => { if (!G.siege.active) alertEl.style.display = 'none' }, 3000)
+  playTrack('battle')
 }
 
 export function launchSiege() {
@@ -198,6 +200,7 @@ export function tickSiege(dt) {
       G.siege.active = false
       addLog('🛡 攻城擊退！村莊守住了！', 'level')
       document.getElementById('siege-alert').style.display = 'none'
+      playTrack(G.dayPhase === 'night' ? 'night' : 'day')
     }
   }
 

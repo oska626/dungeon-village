@@ -15,6 +15,7 @@ import {
   openSkillTree, closeSkillTree, confirmPromotion,
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
+import { initAudio, playTrack, setMusicEnabled, setMusicVolume } from './audio.js'
 
 // ── Options state ──
 let selectedDiff = 'normal'
@@ -115,6 +116,7 @@ function startGameLoop() {
   resize()
   lastTime = performance.now()
   requestAnimationFrame(gameLoop)
+  playTrack('day')
 }
 
 // ── Restart (called from game over) ──
@@ -199,14 +201,16 @@ function boot() {
     })
   })
 
-  // SFX toggles (placeholder — no audio yet)
+  // SFX / BGM toggle
   document.getElementById('sfx-on').addEventListener('click', () => {
     document.getElementById('sfx-on').classList.add('active')
     document.getElementById('sfx-off').classList.remove('active')
+    setMusicEnabled(true)
   })
   document.getElementById('sfx-off').addEventListener('click', () => {
     document.getElementById('sfx-off').classList.add('active')
     document.getElementById('sfx-on').classList.remove('active')
+    setMusicEnabled(false)
   })
 
   // FX toggle
