@@ -471,6 +471,30 @@ export function render() {
     })
   }
 
+  // Construction scaffolding
+  G.buildings.forEach(b => {
+    if (!b.constructing) return
+    const { x, y } = gridToScreen(b.gx, b.gy)
+    const bh = 28 + (b.level || 1) * 5
+    const pct = b.constructTimer / b.constructTime
+    ctx.save()
+    ctx.globalAlpha = 0.85
+    ctx.fillStyle = '#8B6914'
+    ctx.fillRect(x - ISO_W / 2 + 2, y - bh - 4, 4, bh + 4)
+    ctx.fillRect(x + ISO_W / 2 - 6, y - bh - 4, 4, bh + 4)
+    for (let ri = 0; ri < 3; ri++) {
+      const ry = y - bh * (0.25 + ri * 0.3)
+      ctx.fillStyle = '#a07820'
+      ctx.fillRect(x - ISO_W / 2 + 2, ry, ISO_W - 4, 3)
+    }
+    ctx.globalAlpha = 1
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 14, y - bh - 16, 28, 6)
+    ctx.fillStyle = '#f0a500'; ctx.fillRect(x - 13, y - bh - 15, 26 * pct, 4)
+    ctx.font = '8px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'
+    ctx.fillText('🔨 ' + Math.ceil((1 - pct) * b.constructTime) + 's', x, y - bh - 20)
+    ctx.restore()
+  })
+
   G.adventurers.forEach(a => drawAdventurer(a))
   G.monsters.forEach(m => { if (!m.dead) drawMonster(m) })
 
@@ -482,6 +506,72 @@ export function render() {
     ctx.restore()
     p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.alpha -= 1 / p.life; p.r *= 0.97
     if (p.alpha <= 0) particles.splice(i, 1)
+  }
+
+  // Day/night overlay
+  {
+    const t = G.timeOfDay
+    let overlayColor = null
+    if (t < 0.08) {
+      // Deep night fading to dawn
+      const f = t / 0.08
+      overlayColor = `rgba(0,10,60,${0.45 * (1 - f) + 0.15 * f})`
+    } else if (t < 0.18) {
+      // Dawn: orange-red
+      const f = (t - 0.08) / 0.10
+      overlayColor = `rgba(200,80,20,${0.18 * (1 - f)})`
+    } else if (t < 0.62) {
+      // Day: no overlay
+      overlayColor = null
+    } else if (t < 0.72) {
+      // Dusk: orange-purple fading in
+      const f = (t - 0.62) / 0.10
+      overlayColor = `rgba(160,60,100,${0.22 * f})`
+    } else if (t < 0.82) {
+      // Dusk deepening to night
+      const f = (t - 0.72) / 0.10
+      overlayColor = `rgba(${Math.floor(160*(1-f))},${Math.floor(60*(1-f))},${Math.floor(100*(1-f)+60*f)},${0.22 + 0.23*f})`
+    } else {
+      // Night
+      overlayColor = 'rgba(0,10,60,0.45)'
+    }
+    if (overlayColor) {
+      ctx.save(); ctx.globalAlpha = 1
+      ctx.fillStyle = overlayColor
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.restore()
+    }
+    // Stars at night
+    if (t > 0.75 || t < 0.12) {
+      const starAlpha = t > 0.82 ? 0.7 : t < 0.08 ? 0.7 * (1 - t / 0.08) : (t - 0.75) / 0.07 * 0.7
+      ctx.save(); ctx.globalAlpha = starAlpha
+      const starSeed = 42
+      for (let i = 0; i < 40; i++) {
+        const sx = ((Math.sin(i * 127.1 + starSeed) * 0.5 + 0.5)) * canvas.width
+        const sy = ((Math.sin(i * 311.7 + starSeed) * 0.5 + 0.5)) * canvas.height * 0.5
+        const sr = 0.8 + (i % 3) * 0.4
+        const twinkle = 0.5 + 0.5 * Math.sin(performance.now() / (800 + i * 200))
+        ctx.globalAlpha = starAlpha * twinkle
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.restore()
+    }
+    // Moon icon at night
+    if (t > 0.78 || t < 0.10) {
+      const moonAlpha = t > 0.82 ? 1 : t < 0.08 ? 1 - t / 0.08 : Math.min(1, (t - 0.78) / 0.04)
+      ctx.save(); ctx.globalAlpha = moonAlpha * 0.85
+      ctx.font = '20px serif'; ctx.textAlign = 'right'
+      ctx.fillText('🌙', canvas.width - 12, 36)
+      ctx.restore()
+    }
+    // Sun icon at day
+    if (t > 0.15 && t < 0.65) {
+      const sunAlpha = t < 0.22 ? (t - 0.15) / 0.07 : t > 0.58 ? 1 - (t - 0.58) / 0.07 : 1
+      ctx.save(); ctx.globalAlpha = sunAlpha * 0.8
+      ctx.font = '18px serif'; ctx.textAlign = 'right'
+      ctx.fillText('☀️', canvas.width - 12, 36)
+      ctx.restore()
+    }
   }
 
   // Quest flash

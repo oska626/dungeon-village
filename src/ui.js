@@ -71,6 +71,23 @@ export function claimQuest(qid) {
 // ── Building info ──
 export function showBuildingInfo(b) {
   const d = GAME_DATA.buildings.find(x => x.id === b.id); if (!d) return
+  if (b.constructing) {
+    const pct = Math.floor(b.constructTimer / b.constructTime * 100)
+    const remaining = Math.ceil(b.constructTime - b.constructTimer)
+    const skipCost = Math.floor(d.cost * 0.5)
+    const canSkip = G.gold >= skipCost
+    document.getElementById('bld-info').innerHTML = `
+      <div id="bld-info-title">🔨 ${d.emoji} ${d.name} 建造中…</div>
+      <div style="font-size:12px;color:var(--text-dim);">剩餘 ${remaining} 秒</div>
+      <div style="background:rgba(0,0,0,.4);border-radius:3px;height:8px;margin:6px 0;overflow:hidden;">
+        <div style="background:var(--gold);height:100%;width:${pct}%;transition:width .5s;"></div>
+      </div>
+      <div id="bld-upgrade-btn" class="${canSkip ? '' : 'disabled'}"
+           onclick="${canSkip ? `instantCompleteBuilding(${b.gx},${b.gy})` : ''}">
+        ⚡ 即時完成 (${skipCost}💰)
+      </div>`
+    return
+  }
   const upgradeCost = Math.floor(d.cost * (b.level * 0.8))
   const canUpgrade = b.level < 3 && G.gold >= upgradeCost
   const synActive = G.activeSynergyMap[b.id]
@@ -165,12 +182,24 @@ export function cancelPlacing() {
 export function placeBuilding(bdata, gx, gy) {
   if (G.gold < bdata.cost) { addLog('💸 金幣不足！', ''); return }
   G.gold -= bdata.cost; G.grid[gy][gx] = 2
-  G.buildings.push({ id: bdata.id, gx, gy, level: 1 })
+  const buildTime = bdata.buildTime || 20
+  G.buildings.push({ id: bdata.id, gx, gy, level: 1, constructing: true, constructTimer: 0, constructTime: buildTime })
   G.buildingCacheDirty = true
-  addLog(`🏗 建造了 ${bdata.emoji}${bdata.name}！費用 ${bdata.cost}金`, 'build')
+  addLog(`🔨 開始建造 ${bdata.emoji}${bdata.name}！需 ${buildTime} 秒`, 'build')
   G.popularity += bdata.popularity; G.townExp += bdata.cost * 0.1
   cancelPlacing(); buildBuildPanel(); updateTopBar(); checkTownLevelUp()
-  recalcSynergies(); updateQuestProgress(); applyResidentBonuses()
+  updateQuestProgress()
+}
+
+export function instantCompleteBuilding(gx, gy) {
+  const b = G.buildings.find(x => x.gx === gx && x.gy === gy); if (!b || !b.constructing) return
+  const d = GAME_DATA.buildings.find(x => x.id === b.id)
+  const cost = Math.floor(d.cost * 0.5)
+  if (G.gold < cost) { addLog(`即時完成需要 ${cost} 金幣！`, ''); return }
+  G.gold -= cost; b.constructing = false; b.constructTimer = b.constructTime
+  G.buildingCacheDirty = true
+  addLog(`⚡ ${d.emoji}${d.name} 即時完成！花費 ${cost}金`, 'build')
+  applyResidentBonuses(); recalcSynergies(); showBuildingInfo(b); updateTopBar()
 }
 
 export function upgradeBuilding(gx, gy) {

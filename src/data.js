@@ -7,16 +7,16 @@
 
 export const GAME_DATA = {
   buildings: [
-    { id:"inn",        name:"旅館",   emoji:"🏨", cost:200, baseIncome:15, popularity:10, satisfaction:8,  buffStat:"hp",  buffAmt:10, desc:"恢復HP，每日穩定收入",         color:"#2d6a4f", roofStyle:"peak",    roofColor:"#c85a2a", synergyWith:["cake_shop"], synergyBonus:"滿足度+50%",      unlockPop:0  },
-    { id:"weapon_shop",name:"武器店", emoji:"⚔️",  cost:350, baseIncome:20, popularity:15, satisfaction:12, buffStat:"atk", buffAmt:5,  desc:"提升ATK，高收益商業",           color:"#8b1a1a", roofStyle:"tower",   roofColor:"#6a1010", flagColor:"#cc2222", synergyWith:["armor_shop"], synergyBonus:"ATK+DEF+15%",    unlockPop:0  },
-    { id:"cake_shop",  name:"蛋糕店", emoji:"🎂",  cost:150, baseIncome:10, popularity:20, satisfaction:20, buffStat:"satisfaction", buffAmt:15, desc:"大幅提升滿足度人氣", color:"#7a4a8a", roofStyle:"chimney", roofColor:"#5a3a6a", synergyWith:["inn"],  synergyBonus:"旅館回血+30%",   unlockPop:0  },
-    { id:"armor_shop", name:"防具店", emoji:"🛡️",  cost:400, baseIncome:18, popularity:12, satisfaction:10, buffStat:"def", buffAmt:8,  desc:"提升DEF+格擋率，Lv3達28%格擋", color:"#1a4a7a", roofStyle:"tower",   roofColor:"#0a2a5a", flagColor:"#2244cc", synergyWith:["weapon_shop"], synergyBonus:"武器店收入+25%", unlockPop:0  },
-    { id:"magic_tower",name:"魔法塔", emoji:"🔮",  cost:600, baseIncome:30, popularity:25, satisfaction:15, buffStat:"atk", buffAmt:15, desc:"解鎖魔法職業，強化魔法師",       color:"#4a1a7a", roofStyle:"dome",    roofColor:"#8822cc", roofIcon:"🌙", synergyWith:["guild"], synergyBonus:"EXP+40%",       unlockPop:40 },
-    { id:"guild",      name:"公會",   emoji:"🏛️",  cost:500, baseIncome:25, popularity:30, satisfaction:5,  buffStat:"exp", buffAmt:20, desc:"加速等級成長",                   color:"#7a5a00", roofStyle:"tower",   roofColor:"#5a4000", flagColor:"#ddaa00", synergyWith:["magic_tower"], synergyBonus:"魔法塔人氣+20%", unlockPop:30 },
-    { id:"market",     name:"市集",   emoji:"🏪",  cost:300, baseIncome:22, popularity:18, satisfaction:14, buffStat:"gold",buffAmt:10, desc:"提升金幣掉落，吸引商人",         color:"#5a3a1a", roofStyle:"awning",  roofColor:"#cc6600", synergyWith:["cake_shop","inn"], synergyBonus:"商業收入+20%", unlockPop:20 },
-    { id:"temple",     name:"神殿",   emoji:"⛩️",  cost:700, baseIncome:12, popularity:35, satisfaction:25, buffStat:"def", buffAmt:12, desc:"大幅提升人氣，聖域庇護",         color:"#3a2a6a", roofStyle:"dome",    roofColor:"#cc4400", roofIcon:"✦", synergyWith:["guild"], synergyBonus:"居民幸福感+30%", unlockPop:60 },
-    { id:"forge",      name:"打鐵店", emoji:"🔨",  cost:450, baseIncome:18, popularity:12, satisfaction:8,  buffStat:"atk", buffAmt:8,  desc:"冒險者可升級裝備，需資源",       color:"#5a3010", roofStyle:"chimney", roofColor:"#3a2000", synergyWith:["weapon_shop","armor_shop"], synergyBonus:"裝備升級費-30%", unlockPop:25 },
-    { id:"house",      name:"住宅",   emoji:"🏡",  cost:120, baseIncome:5,  popularity:5,  satisfaction:3,  buffStat:"hp",  buffAmt:5,  desc:"提供一個冒險者居住，必須先建才可招募", color:"#3a5a2a", roofStyle:"peak", roofColor:"#a05020", synergyWith:["inn"], synergyBonus:"旅館回血+15%",   unlockPop:0, isHouse:true },
+    { id:"inn",        name:"旅館",   emoji:"🏨", cost:200, buildTime:30, baseIncome:15, popularity:10, satisfaction:8,  buffStat:"hp",  buffAmt:10, desc:"恢復HP，每日穩定收入",         color:"#2d6a4f", roofStyle:"peak",    roofColor:"#c85a2a", synergyWith:["cake_shop"], synergyBonus:"滿足度+50%",      unlockPop:0  },
+    { id:"weapon_shop",name:"武器店", emoji:"⚔️",  cost:350, buildTime:20, baseIncome:20, popularity:15, satisfaction:12, buffStat:"atk", buffAmt:5,  desc:"提升ATK，高收益商業",           color:"#8b1a1a", roofStyle:"tower",   roofColor:"#6a1010", flagColor:"#cc2222", synergyWith:["armor_shop"], synergyBonus:"ATK+DEF+15%",    unlockPop:0  },
+    { id:"cake_shop",  name:"蛋糕店", emoji:"🎂",  cost:150, buildTime:15, baseIncome:10, popularity:20, satisfaction:20, buffStat:"satisfaction", buffAmt:15, desc:"大幅提升滿足度人氣", color:"#7a4a8a", roofStyle:"chimney", roofColor:"#5a3a6a", synergyWith:["inn"],  synergyBonus:"旅館回血+30%",   unlockPop:0  },
+    { id:"armor_shop", name:"防具店", emoji:"🛡️",  cost:400, buildTime:20, baseIncome:18, popularity:12, satisfaction:10, buffStat:"def", buffAmt:8,  desc:"提升DEF+格擋率，Lv3達28%格擋", color:"#1a4a7a", roofStyle:"tower",   roofColor:"#0a2a5a", flagColor:"#2244cc", synergyWith:["weapon_shop"], synergyBonus:"武器店收入+25%", unlockPop:0  },
+    { id:"magic_tower",name:"魔法塔", emoji:"🔮",  cost:600, buildTime:50, baseIncome:30, popularity:25, satisfaction:15, buffStat:"atk", buffAmt:15, desc:"解鎖魔法職業，強化魔法師",       color:"#4a1a7a", roofStyle:"dome",    roofColor:"#8822cc", roofIcon:"🌙", synergyWith:["guild"], synergyBonus:"EXP+40%",       unlockPop:40 },
+    { id:"guild",      name:"公會",   emoji:"🏛️",  cost:500, buildTime:40, baseIncome:25, popularity:30, satisfaction:5,  buffStat:"exp", buffAmt:20, desc:"加速等級成長",                   color:"#7a5a00", roofStyle:"tower",   roofColor:"#5a4000", flagColor:"#ddaa00", synergyWith:["magic_tower"], synergyBonus:"魔法塔人氣+20%", unlockPop:30 },
+    { id:"market",     name:"市集",   emoji:"🏪",  cost:300, buildTime:35, baseIncome:22, popularity:18, satisfaction:14, buffStat:"gold",buffAmt:10, desc:"提升金幣掉落，吸引商人",         color:"#5a3a1a", roofStyle:"awning",  roofColor:"#cc6600", synergyWith:["cake_shop","inn"], synergyBonus:"商業收入+20%", unlockPop:20 },
+    { id:"temple",     name:"神殿",   emoji:"⛩️",  cost:700, buildTime:60, baseIncome:12, popularity:35, satisfaction:25, buffStat:"def", buffAmt:12, desc:"大幅提升人氣，聖域庇護",         color:"#3a2a6a", roofStyle:"dome",    roofColor:"#cc4400", roofIcon:"✦", synergyWith:["guild"], synergyBonus:"居民幸福感+30%", unlockPop:60 },
+    { id:"forge",      name:"打鐵店", emoji:"🔨",  cost:450, buildTime:30, baseIncome:18, popularity:12, satisfaction:8,  buffStat:"atk", buffAmt:8,  desc:"冒險者可升級裝備，需資源",       color:"#5a3010", roofStyle:"chimney", roofColor:"#3a2000", synergyWith:["weapon_shop","armor_shop"], synergyBonus:"裝備升級費-30%", unlockPop:25 },
+    { id:"house",      name:"住宅",   emoji:"🏡",  cost:120, buildTime:5,  baseIncome:5,  popularity:5,  satisfaction:3,  buffStat:"hp",  buffAmt:5,  desc:"提供一個冒險者居住，必須先建才可招募", color:"#3a5a2a", roofStyle:"peak", roofColor:"#a05020", synergyWith:["inn"], synergyBonus:"旅館回血+15%",   unlockPop:0, isHouse:true },
   ],
 
   adventurerClasses: [
@@ -29,11 +29,19 @@ export const GAME_DATA = {
   ],
 
   monsters: [
-    { id:"slime",  name:"史萊姆", emoji:"🟢", hp:30,  atk:4,  def:2,  goldMin:3,  goldMax:8,  expReward:12,  spawnWeight:40 },
-    { id:"goblin", name:"哥布林", emoji:"👺", hp:60,  atk:10, def:5,  goldMin:8,  goldMax:18, expReward:28,  spawnWeight:30 },
-    { id:"orc",    name:"獸人",   emoji:"👹", hp:120, atk:18, def:10, goldMin:18, goldMax:38, expReward:55,  spawnWeight:18 },
-    { id:"witch",  name:"黑女巫", emoji:"🧙‍♀️",hp:90,  atk:22, def:6,  goldMin:15, goldMax:30, expReward:44,  spawnWeight:10 },
-    { id:"dragon", name:"小龍",   emoji:"🐉", hp:250, atk:30, def:20, goldMin:45, goldMax:90, expReward:110, spawnWeight:2  },
+    { id:"slime",  name:"史萊姆", emoji:"🟢", hp:30,  atk:4,  def:2,  goldMin:3,  goldMax:8,  expReward:12,  spawnWeight:40, night:false },
+    { id:"goblin", name:"哥布林", emoji:"👺", hp:60,  atk:10, def:5,  goldMin:8,  goldMax:18, expReward:28,  spawnWeight:30, night:false },
+    { id:"orc",    name:"獸人",   emoji:"👹", hp:120, atk:18, def:10, goldMin:18, goldMax:38, expReward:55,  spawnWeight:18, night:false },
+    { id:"witch",  name:"黑女巫", emoji:"🧙‍♀️",hp:90,  atk:22, def:6,  goldMin:15, goldMax:30, expReward:44,  spawnWeight:10, night:false },
+    { id:"dragon", name:"小龍",   emoji:"🐉", hp:250, atk:30, def:20, goldMin:45, goldMax:90, expReward:110, spawnWeight:2,  night:false },
+  ],
+
+  nightMonsters: [
+    { id:"skeleton", name:"骷髏",   emoji:"💀", hp:70,  atk:14, def:4,  goldMin:10, goldMax:22, expReward:35,  spawnWeight:35 },
+    { id:"ghost",    name:"幽靈",   emoji:"👻", hp:50,  atk:18, def:0,  goldMin:8,  goldMax:20, expReward:30,  spawnWeight:30 },
+    { id:"vampire",  name:"吸血鬼", emoji:"🧛", hp:110, atk:20, def:8,  goldMin:20, goldMax:40, expReward:60,  spawnWeight:20 },
+    { id:"nightfiend",name:"夜魔",  emoji:"😈", hp:90,  atk:25, def:6,  goldMin:18, goldMax:35, expReward:50,  spawnWeight:12 },
+    { id:"lich",     name:"巫妖",   emoji:"🧟", hp:200, atk:28, def:12, goldMin:40, goldMax:80, expReward:100, spawnWeight:3  },
   ],
 
   wallTiers: [

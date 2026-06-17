@@ -50,9 +50,28 @@ export function showLevelUpOverlay() {
 
 export function closeLevelUp() { document.getElementById('level-up-overlay').classList.remove('show') }
 
+// Phase thresholds: dawn 0–0.18, day 0.18–0.62, dusk 0.62–0.82, night 0.82–1
+const PHASE_NAMES = ['dawn', 'day', 'dusk', 'night']
+function calcPhase(t) {
+  if (t < 0.18) return 'dawn'
+  if (t < 0.62) return 'day'
+  if (t < 0.82) return 'dusk'
+  return 'night'
+}
+
 export function tickEconomy(dt) {
   G.dayTick += dt * G.speed
+  // Update timeOfDay (0–1 fraction)
+  const dayDuration = G.dayLength / G.speed
+  G.timeOfDay = (G.dayTick % dayDuration) / dayDuration
+  const newPhase = calcPhase(G.timeOfDay)
+  if (newPhase !== G.dayPhase) {
+    G.dayPhase = newPhase
+    const phaseLabels = { dawn: '🌅 清晨', day: '☀️ 白天', dusk: '🌇 黃昏', night: '🌙 深夜' }
+    addLog(phaseLabels[newPhase] + ' 來臨', newPhase === 'night' ? 'combat' : '')
+  }
   G.buildings.forEach(b => {
+    if (b.constructing) return  // no income while building
     const d = GAME_DATA.buildings.find(x => x.id === b.id); if (!d) return
     const innkeeperBonus = G.residents.filter(r => r.residentJob?.id === 'innkeeper' && b.id === 'inn').length * 0.3
     const income = d.baseIncome * (1 + (b.level - 1) * 0.5) * (1 + innkeeperBonus) * G.incomeBuff * dt * G.speed * 0.1

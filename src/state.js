@@ -41,6 +41,11 @@ export const G = {
   difficulty: 'normal',
   _monsterAtkMult: 1,
   _monsterHpMult: 1,
+  // Day/night
+  timeOfDay: 0,          // 0–1 fraction through the day
+  dayPhase: 'day',       // 'dawn' | 'day' | 'dusk' | 'night'
+  // Night siege (independent from day siege)
+  nightSiege: { timer: 0, nextIn: 90 },
 }
 
 export function initState() {
@@ -61,10 +66,11 @@ export function initState() {
     G.resourceNodes.push({ ...n, stock: n.max, respawnTimer: 0 })
   })
 
-  // Starter houses
+  // Starter houses (5s construction time)
   const starterHouses = [{ gx:6, gy:5 }, { gx:7, gy:5 }]
   starterHouses.forEach(pos => {
     G.grid[pos.gy][pos.gx] = 2
-    G.buildings.push({ id:'house', gx:pos.gx, gy:pos.gy, level:1, hp:150, maxHp:150 })
+    G.buildings.push({ id:'house', gx:pos.gx, gy:pos.gy, level:1, hp:150, maxHp:150,
+      constructing: true, constructTimer: 0, constructTime: 5 })
   })
 }

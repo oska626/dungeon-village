@@ -7,10 +7,11 @@ import { updateAdventurer, recalcSynergies, applyResidentBonuses } from './fsm.j
 import { tickSiege, tickResourceRespawn, restartGame as _restartGame, openWallMenu, closeWallMenu, upgradeWall, repairWall, openForge, closeForge, forgeUpgrade, repairBuilding } from './systems.js'
 import {
   addLog, buildBuildPanel, selectBuilding, cancelPlacing, placeBuilding,
-  showBuildingInfo, upgradeBuilding, refineBuilding, buildAdvPanel, buildResidentPanel,
-  buildQuestPanel, buildSynergyPanel, switchLeftTab, switchRightTab, setSpeed,
-  updateQuestProgress, claimQuest, openDungeonMenu, enterDungeon, battleAction,
-  returnFromDungeon, closeDungeon, recruitAdventurer, triggerBounty, forceLevelUp
+  showBuildingInfo, upgradeBuilding, refineBuilding, instantCompleteBuilding,
+  buildAdvPanel, buildResidentPanel, buildQuestPanel, buildSynergyPanel,
+  switchLeftTab, switchRightTab, setSpeed, updateQuestProgress, claimQuest,
+  openDungeonMenu, enterDungeon, battleAction, returnFromDungeon, closeDungeon,
+  recruitAdventurer, triggerBounty, forceLevelUp
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
 
@@ -21,7 +22,7 @@ export { fxEnabled }
 
 // ── Window exports for HTML onclick ──
 Object.assign(window, {
-  cancelPlacing, upgradeBuilding, refineBuilding, repairBuilding,
+  cancelPlacing, upgradeBuilding, refineBuilding, repairBuilding, instantCompleteBuilding,
   claimQuest, switchLeftTab, switchRightTab, setSpeed,
   openDungeonMenu, enterDungeon, battleAction, returnFromDungeon, closeDungeon,
   recruitAdventurer, triggerBounty, forceLevelUp, closeLevelUp,

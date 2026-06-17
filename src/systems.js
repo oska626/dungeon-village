@@ -5,6 +5,27 @@ import { addLog, updateQuestProgress } from './ui.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
 import { applyResidentBonuses, setState } from './fsm.js'
 
+// ── Construction ticking ──
+export function tickConstruction(dt) {
+  let anyDone = false
+  G.buildings.forEach(b => {
+    if (!b.constructing) return
+    b.constructTimer += dt * G.speed
+    if (b.constructTimer >= b.constructTime) {
+      b.constructing = false
+      b.constructTimer = b.constructTime
+      const bd = GAME_DATA.buildings.find(d => d.id === b.id)
+      import('./ui.js').then(m => m.addLog(`🏗 ${bd?.emoji}${bd?.name} 建造完成！`, 'build'))
+      G.buildingCacheDirty = true
+      anyDone = true
+    }
+  })
+  if (anyDone) {
+    import('./economy.js').then(m => { m.updateTopBar(); m.updateResourceDisplay() })
+    import('./fsm.js').then(m => { m.applyResidentBonuses(); m.recalcSynergies() })
+  }
+}
+
 // ── Resource respawn ──
 export function tickResourceRespawn(dt) {
   G.resourceNodes.forEach(n => {
@@ -43,13 +64,14 @@ function siegeMonsterStep(sm, dt) {
   }
 }
 
-export function launchSiege() {
+function spawnSiegeWave(monsterPool, waveSize, label, alertText) {
   G.siege.active = true
-  const waveSize = 2 + Math.floor(G.townLevel * 1.5)
-  const wt = []; GAME_DATA.monsters.forEach(m => { for (let i = 0; i < m.spawnWeight; i++) wt.push(m) })
+  const wt = []; monsterPool.forEach(m => { for (let i = 0; i < m.spawnWeight; i++) wt.push(m) })
+  // Scale HP thicker when wave is large (cap fps impact)
+  const sizeMult = Math.max(1, (waveSize - 4) * 0.15)
   for (let i = 0; i < waveSize; i++) {
     const proto = wt[Math.floor(Math.random() * wt.length)]
-    const hpMult = (1 + G.townLevel * 0.3) * (G._monsterHpMult || 1)
+    const hpMult = (1 + G.townLevel * 0.3 + sizeMult) * (G._monsterHpMult || 1)
     const atkMult = G._monsterAtkMult || 1
     const spawnGX = G.gridW - 1, spawnGY = 7 + Math.floor(Math.random() * 2)
     const spawnScreen = gridToScreen(spawnGX, spawnGY)
@@ -62,10 +84,24 @@ export function launchSiege() {
       dead: false, attackTimer: 0, isSiege: true, _wpIdx: 0,
     })
   }
-  const alert = document.getElementById('siege-alert')
-  alert.style.display = 'block'; alert.textContent = `👹 攻城！${waveSize}隻怪物衝向村莊！`
-  addLog(`🚨 攻城！${waveSize}隻怪物進攻村莊！`, 'combat')
-  setTimeout(() => { if (!G.siege.active) alert.style.display = 'none' }, 3000)
+  const alertEl = document.getElementById('siege-alert')
+  alertEl.style.display = 'block'; alertEl.textContent = alertText
+  addLog(`🚨 ${label}！${waveSize}隻怪物進攻村莊！`, 'combat')
+  setTimeout(() => { if (!G.siege.active) alertEl.style.display = 'none' }, 3000)
+}
+
+export function launchSiege() {
+  // Wave size: scales with adventurers (1 per 2 adventurers), capped 8–10, grows with town level
+  const advScale = Math.floor(G.adventurers.length / 2)
+  const baseSize = 2 + Math.floor(G.townLevel * 1.2) + advScale
+  const waveSize = Math.min(baseSize, 8 + Math.floor(G.townLevel / 3))
+  spawnSiegeWave(GAME_DATA.monsters, waveSize, '攻城', `👹 攻城！${waveSize}隻怪物衝向村莊！`)
+}
+
+export function launchNightRaid() {
+  const advScale = Math.floor(G.adventurers.length / 2)
+  const waveSize = Math.min(2 + Math.floor(G.townLevel * 0.8) + advScale, 6)
+  spawnSiegeWave(GAME_DATA.nightMonsters, waveSize, '夜襲', `🌙 夜襲！${waveSize}隻夜間怪物出沒！`)
 }
 
 export function checkGameOver() {
@@ -78,8 +114,28 @@ export function checkGameOver() {
   }
 }
 
+// ── Night raid ticker (independent from day siege) ──
+function tickNightSiege(dt) {
+  if (G.dayPhase !== 'night') {
+    G.nightSiege.timer = 0  // reset when not night
+    return
+  }
+  if (G.siege.active) return  // don't stack raids
+  G.nightSiege.timer += dt * G.speed
+  if (G.nightSiege.timer >= G.nightSiege.nextIn && G.buildings.length > 0) {
+    G.nightSiege.timer = 0
+    // Next raid: 80–130 real-seconds of night time, scaled by difficulty
+    const base = (G._monsterAtkMult || 1) > 1 ? 60 : 90
+    G.nightSiege.nextIn = base + Math.random() * 40
+    if (Math.random() < 0.65)  // 65% chance to actually raid (not every night triggers)
+      launchNightRaid()
+  }
+}
+
 export function tickSiege(dt) {
   if (G.gameOver) return
+  tickConstruction(dt)
+  tickNightSiege(dt)
   const baseInterval = Math.max(20, 90 - G.townLevel * 14)
   G.siege.interval = baseInterval
   G.siege.timer += dt * G.speed
