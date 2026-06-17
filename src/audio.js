@@ -90,7 +90,7 @@ const TRACKS = {
 // ── Web Audio state ──────────────────────────────────────────────────────────
 let ctx = null
 let masterGain = null
-let enabled = true
+let enabled = false
 let volume = 0.25
 let currentTrackKey = null
 let sequencerHandle = null   // { stop() } returned by playSequence
