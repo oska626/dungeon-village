@@ -17,7 +17,6 @@ function loadImg(key, src) {
 }
 loadImg('grass',        '/sprites/grass.png')
 loadImg('road',         '/sprites/road.png')
-loadImg('crossroad',    '/sprites/crossroad.png')
 loadImg('bld_house',        '/sprites/house.png')
 loadImg('bld_weapon_shop',  '/sprites/weapon_shop.png')
 loadImg('bld_inn',          '/sprites/inn.png')
@@ -120,8 +119,7 @@ function drawTile(gx, gy, fillColor, strokeColor = 'rgba(0,0,0,0.3)') {
   }
 
   if (fillColor === '#8b7355') {
-    const isCross = (gy === 7 || gy === 8) && (gx === 10 || gx === 11)
-    if (drawSpriteImg(isCross ? 'crossroad' : 'road', x, y, true)) return
+    if (drawSpriteImg('road', x, y, true)) return
   }
 
   ctx.beginPath()
