@@ -85,12 +85,23 @@ export function spawnParticles(cx, cy, color, count, spread, speed) {
 }
 
 // ── Tile ──
-function drawSpriteImg(key, x, y) {
+function drawSpriteImg(key, x, y, clipDiamond = false) {
   const img = IMG[key]
   if (!img?.complete || !img.naturalWidth) return false
   const iw = ISO_W
   const ih = ISO_W * (img.naturalHeight / img.naturalWidth)
+  if (clipDiamond) {
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + ISO_W / 2, y + ISO_H / 2)
+    ctx.lineTo(x, y + ISO_H)
+    ctx.lineTo(x - ISO_W / 2, y + ISO_H / 2)
+    ctx.closePath()
+    ctx.clip()
+  }
   ctx.drawImage(img, x - iw / 2, y + ISO_H - ih, iw, ih)
+  if (clipDiamond) ctx.restore()
   return true
 }
 
@@ -98,13 +109,12 @@ function drawTile(gx, gy, fillColor, strokeColor = 'rgba(0,0,0,0.3)') {
   const { x, y } = gridToScreen(gx, gy)
 
   if (fillColor === '#3a7d44' || fillColor === '#347040') {
-    if (drawSpriteImg('grass', x, y)) return
+    if (drawSpriteImg('grass', x, y, true)) return
   }
 
   if (fillColor === '#8b7355') {
-    // Crossroad: intersection of horizontal road rows (7-8) and vertical road cols (10-11)
     const isCross = (gy === 7 || gy === 8) && (gx === 10 || gx === 11)
-    if (drawSpriteImg(isCross ? 'crossroad' : 'road', x, y)) return
+    if (drawSpriteImg(isCross ? 'crossroad' : 'road', x, y, true)) return
   }
 
   ctx.beginPath()
