@@ -15,9 +15,12 @@ function loadImg(key, src) {
   img.src = src
   IMG[key] = img
 }
-loadImg('grass',     '/sprites/grass.png')
-loadImg('road',      '/sprites/road.png')
-loadImg('crossroad', '/sprites/crossroad.png')
+loadImg('grass',        '/sprites/grass.png')
+loadImg('road',         '/sprites/road.png')
+loadImg('crossroad',    '/sprites/crossroad.png')
+loadImg('bld_house',        '/sprites/house.png')
+loadImg('bld_weapon_shop',  '/sprites/weapon_shop.png')
+loadImg('bld_inn',          '/sprites/inn.png')
 
 const offscreen = document.createElement('canvas')
 const offCtx = offscreen.getContext('2d')
@@ -119,6 +122,28 @@ function drawBuilding3DTo(targetCtx, gx, gy, bdata, bLevel, synActive, isSelecte
   const bh = 22 + bLevel * 5
   const bx = x - bw / 2
   const by = y - bh
+
+  // Use AI sprite if available
+  const sprKey = 'bld_' + bdata.id
+  const sprImg = IMG[sprKey]
+  if (sprImg?.complete && sprImg.naturalWidth > 0) {
+    if (synActive) { dc.save(); dc.shadowColor = 'gold'; dc.shadowBlur = 14 }
+    // Scale sprite: width = ISO_W * 2, anchor bottom-centre to tile centre
+    const sw = ISO_W * 2.2
+    const sh = sw * (sprImg.naturalHeight / sprImg.naturalWidth)
+    dc.drawImage(sprImg, x - sw / 2, y + ISO_H - sh, sw, sh)
+    // Level badge
+    if (bLevel > 1) {
+      dc.fillStyle = 'rgba(0,0,0,0.65)'; dc.fillRect(x - 8, y - sh * 0.6, 16, 10)
+      dc.font = 'bold 8px sans-serif'; dc.fillStyle = '#ffdd55'; dc.textAlign = 'center'
+      dc.fillText('Lv' + bLevel, x, y - sh * 0.6 + 8)
+    }
+    // Selection ring
+    const sel = isSelected || (G.selectedBuildingOnMap?.gx === gx && G.selectedBuildingOnMap?.gy === gy)
+    if (sel) { dc.strokeStyle = 'gold'; dc.lineWidth = 2.5; dc.strokeRect(x - sw / 2 - 2, y + ISO_H - sh - 2, sw + 4, sh + 4) }
+    if (synActive) dc.restore()
+    return
+  }
 
   if (synActive) { dc.save(); dc.shadowColor = 'gold'; dc.shadowBlur = 10 }
 
