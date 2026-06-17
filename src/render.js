@@ -115,11 +115,11 @@ function drawTile(gx, gy, fillColor, strokeColor = 'rgba(0,0,0,0.3)') {
   const { x, y } = gridToScreen(gx, gy)
 
   if (fillColor === '#3a7d44' || fillColor === '#347040') {
-    if (drawSpriteImg('grass', x, y, true)) return
+    if (drawSpriteImg('grass', x, y, false)) return
   }
 
   if (fillColor === '#8b7355') {
-    if (drawSpriteImg('road', x, y, true)) return
+    if (drawSpriteImg('road', x, y, false)) return
   }
 
   ctx.beginPath()
