@@ -17,7 +17,8 @@ export function resize() {
   offscreen.width = canvas.width
   offscreen.height = canvas.height
   OFFSET_X = canvas.width / 2
-  OFFSET_Y = 90
+  const gridPixH = (G.gridW + G.gridH) * (ISO_H / 2)
+  OFFSET_Y = Math.max(40, (canvas.height - gridPixH) / 2)
   G.buildingCacheDirty = true
 }
 resize()

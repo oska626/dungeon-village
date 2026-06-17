@@ -26,7 +26,7 @@ Object.assign(window, {
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect()
   const sx = e.clientX - rect.left, sy = e.clientY - rect.top
-  const { gx, gy } = screenToGrid(sx, sy)
+  const { x: gx, y: gy } = screenToGrid(sx, sy)
   if (gx < 0 || gy < 0 || gx >= G.gridW || gy >= G.gridH) return
 
   if (G.placingBuilding) {
