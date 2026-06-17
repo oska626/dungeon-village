@@ -16,7 +16,7 @@ import {
   initTutorialPanel,
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
-import { initAudio, playTrack, setMusicEnabled, setMusicVolume } from './audio.js'
+import { initAudio, playTrack, setMusicEnabled, setMusicVolume, stopAll } from './audio.js'
 
 // ── Options state ──
 let selectedDiff = 'normal'
@@ -123,6 +123,7 @@ function startGameLoop() {
 
 // ── Restart (called from game over) ──
 function restartGame() {
+  stopAll()
   deleteSave()
   // Reset all G fields
   const fresh = {

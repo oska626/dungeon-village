@@ -3,6 +3,7 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen, screenToGrid, addCombatFX, spawnParticles } from './render.js'
 import { addLog, updateQuestProgress } from './ui.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
+import { stopAll } from './audio.js'
 import { applyResidentBonuses, setState } from './fsm.js'
 import { playTrack } from './audio.js'
 
@@ -118,6 +119,7 @@ export function launchNightRaid() {
 export function checkGameOver() {
   if (G.buildings.length === 0) {
     G.gameOver = true
+    stopAll()
     document.getElementById('go-days').textContent = G.day
     document.getElementById('go-kills').textContent = G.stats.kills
     document.getElementById('gameover-overlay').classList.add('show')
