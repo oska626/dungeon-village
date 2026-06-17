@@ -127,7 +127,7 @@ function restartGame() {
   deleteSave()
   // Reset all G fields
   const fresh = {
-    gold:800, day:1, dayTick:0, dayLength:280, popularity:0, satisfaction:0,
+    gold:800, day:1, dayTick:0, dayLength:240, popularity:0, satisfaction:0,
     townLevel:1, townExp:0, townExpNeeded:200,
     buildings:[], adventurers:[], monsters:[], residents:[],
     selectedBuilding:null, placingBuilding:null, speed:1, townIncome:0,

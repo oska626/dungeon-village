@@ -6,7 +6,7 @@
 import { GAME_DATA } from './data.js'
 
 export const G = {
-  gold: 800, day: 1, dayTick: 0, dayLength: 280,
+  gold: 800, day: 1, dayTick: 0, dayLength: 240,
   popularity: 0, satisfaction: 0,
   townLevel: 1, townExp: 0, townExpNeeded: 200,
   buildings: [], adventurers: [], monsters: [], residents: [],

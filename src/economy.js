@@ -51,12 +51,12 @@ export function showLevelUpOverlay() {
 
 export function closeLevelUp() { document.getElementById('level-up-overlay').classList.remove('show') }
 
-// Phase thresholds: dawn 0–0.18, day 0.18–0.62, dusk 0.62–0.82, night 0.82–1
+// Phase thresholds: 4 equal phases × 1 min each = 4 min/day
 const PHASE_NAMES = ['dawn', 'day', 'dusk', 'night']
 function calcPhase(t) {
-  if (t < 0.18) return 'dawn'
-  if (t < 0.62) return 'day'
-  if (t < 0.82) return 'dusk'
+  if (t < 0.25) return 'dawn'
+  if (t < 0.50) return 'day'
+  if (t < 0.75) return 'dusk'
   return 'night'
 }
 
