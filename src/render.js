@@ -8,6 +8,15 @@ const wrap = document.getElementById('world-wrap')
 
 export let ISO_W = 44, ISO_H = 22, OFFSET_X = 0, OFFSET_Y = 0
 
+// ── Sprite images ────────────────────────────────────────────────────────────
+const IMG = {}
+function loadImg(key, src) {
+  const img = new Image()
+  img.src = src
+  IMG[key] = img
+}
+loadImg('grass', '/sprites/grass.png')
+
 const offscreen = document.createElement('canvas')
 const offCtx = offscreen.getContext('2d')
 
@@ -72,6 +81,19 @@ export function spawnParticles(cx, cy, color, count, spread, speed) {
 // ── Tile ──
 function drawTile(gx, gy, fillColor, strokeColor = 'rgba(0,0,0,0.3)') {
   const { x, y } = gridToScreen(gx, gy)
+  // Grass tile: use sprite image (covers cell === 0, green tiles)
+  if (fillColor === '#3a7d44' || fillColor === '#347040') {
+    const img = IMG['grass']
+    if (img?.complete && img.naturalWidth > 0) {
+      // Sprite has tall grass fringe above the diamond; scale to fit tile width
+      // Image aspect: ~2:1, but fringe adds ~40% height above centre
+      const iw = ISO_W
+      const ih = ISO_W * (img.naturalHeight / img.naturalWidth)
+      // y anchor: bottom of diamond = y + ISO_H, image bottom aligns there
+      ctx.drawImage(img, x - iw / 2, y + ISO_H - ih, iw, ih)
+      return
+    }
+  }
   ctx.beginPath()
   ctx.moveTo(x, y); ctx.lineTo(x + ISO_W / 2, y + ISO_H / 2)
   ctx.lineTo(x, y + ISO_H); ctx.lineTo(x - ISO_W / 2, y + ISO_H / 2)
