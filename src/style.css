@@ -276,3 +276,37 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .forge-btn.disabled{opacity:.35;cursor:not-allowed;}
 
 .bld-hp-overlay{pointer-events:none;}
+
+/* ── ADVENTURER SKILL DISPLAY ── */
+.adv-promote-btn{width:100%;margin-top:5px;padding:6px;background:linear-gradient(135deg,#3a006a,#6a00aa);border:1px solid #cc44ff;border-radius:5px;color:#fff;font-size:13px;cursor:pointer;animation:promoteGlow 1.2s ease infinite alternate;font-family:'Noto Sans TC',sans-serif;}
+.adv-promote-btn:hover{background:linear-gradient(135deg,#6a00aa,#9900ff);border-color:#ff88ff;}
+@keyframes promoteGlow{from{box-shadow:0 0 6px rgba(170,0,255,.4);}to{box-shadow:0 0 16px rgba(200,100,255,.9);}}
+.adv-skills-row{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.skill-chip{font-size:11px;border-radius:4px;padding:2px 6px;display:inline-flex;align-items:center;gap:3px;}
+.skill-chip.active-skill{background:rgba(180,80,255,.15);border:1px solid rgba(180,80,255,.4);color:#cc88ff;}
+.skill-chip.passive-skill{background:rgba(80,180,255,.12);border:1px solid rgba(80,180,255,.35);color:#88ccff;}
+
+/* ── SKILL TREE OVERLAY ── */
+#skill-tree-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:800;display:flex;align-items:center;justify-content:center;}
+#skill-tree-box{background:linear-gradient(180deg,#0a0518,#0f0a20);border:2px solid #8833cc;border-radius:14px;padding:24px 28px;width:620px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 0 50px rgba(136,50,200,.5);}
+.st-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.st-title{font-family:'Press Start 2P',monospace;font-size:13px;color:#cc88ff;}
+.st-close{background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--parchment);font-size:16px;width:28px;height:28px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.st-close:hover{background:var(--red);border-color:var(--red-hi);}
+.st-current{font-size:14px;color:var(--parchment);background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:8px;}
+.st-desc{font-size:13px;color:#cc88ff;text-align:center;margin-bottom:16px;letter-spacing:1px;}
+.st-branches{display:flex;align-items:stretch;gap:8px;}
+.st-vs{display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold);flex-shrink:0;padding:0 4px;}
+.st-branch{flex:1;background:rgba(255,255,255,.04);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:8px;}
+.st-branch:hover{border-color:#cc44ff;background:rgba(136,50,200,.15);transform:translateY(-2px);box-shadow:0 4px 20px rgba(136,50,200,.3);}
+.st-branch-header{display:flex;align-items:center;gap:8px;}
+.st-class-emoji{font-size:28px;}
+.st-class-name{font-size:16px;font-weight:700;color:var(--gold);}
+.st-stats{font-size:12px;color:var(--text-dim);}
+.st-skill{background:rgba(0,0,0,.3);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:3px;}
+.st-skill.passive{background:rgba(30,60,100,.25);}
+.st-skill-type{font-size:10px;font-weight:700;background:#6600aa;color:#fff;border-radius:3px;padding:1px 5px;display:inline-block;width:fit-content;}
+.st-skill-type.passive{background:#1155aa;}
+.st-skill-desc{font-size:12px;color:var(--text-dim);line-height:1.4;}
+.st-skill-cd{font-size:11px;color:var(--orange-hi);}
+.st-select-hint{text-align:center;font-size:11px;color:var(--text-dim);margin-top:4px;letter-spacing:1px;}

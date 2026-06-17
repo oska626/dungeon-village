@@ -11,7 +11,8 @@ import {
   buildAdvPanel, buildResidentPanel, buildQuestPanel, buildSynergyPanel,
   switchLeftTab, switchRightTab, setSpeed, updateQuestProgress, claimQuest,
   openDungeonMenu, enterDungeon, battleAction, returnFromDungeon, closeDungeon,
-  recruitAdventurer, triggerBounty, forceLevelUp
+  recruitAdventurer, triggerBounty, forceLevelUp,
+  openSkillTree, closeSkillTree, confirmPromotion,
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
 
@@ -28,6 +29,7 @@ Object.assign(window, {
   recruitAdventurer, triggerBounty, forceLevelUp, closeLevelUp,
   openWallMenu, closeWallMenu, upgradeWall, repairWall,
   openForge, closeForge, forgeUpgrade,
+  openSkillTree, closeSkillTree, confirmPromotion,
   restartGame, manualSave,
 })
 
@@ -59,10 +61,12 @@ function gameLoop(ts) {
   const dt = Math.min((ts - lastTime) / 1000, 0.1)
   lastTime = ts
 
-  G.adventurers.forEach(adv => updateAdventurer(adv, dt))
-  tickEconomy(dt)
-  tickResourceRespawn(dt)
-  tickSiege(dt)
+  if (!G.paused) {
+    G.adventurers.forEach(adv => updateAdventurer(adv, dt))
+    tickEconomy(dt)
+    tickResourceRespawn(dt)
+    tickSiege(dt)
+  }
   render()
 
   panelTimer += dt

@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { GAME_DATA } from './data.js'
 import { canvas, combatFX } from './render.js'
 import { updateTopBar, updateResourceDisplay, checkTownLevelUp, depositToTown } from './economy.js'
-import { applyResidentBonuses, recalcSynergies, createAdventurer, checkAdvLevelUp, promoteResident } from './fsm.js'
+import { applyResidentBonuses, recalcSynergies, createAdventurer, checkAdvLevelUp, promoteResident, applySkillPassive } from './fsm.js'
 import { repairBuilding, openForge, buildForgeUI, forgeUpgrade, upgradeWall, repairWall, openWallMenu, closeWallMenu } from './systems.js'
 
 // ── Logging ──
@@ -244,9 +244,114 @@ export function buildAdvPanel() {
         ${adv.restTimer > 0 ? `<span style="color:var(--red-hi);">💤 休息中 ${Math.ceil(adv.restTimer)}s</span>` : ''}
         ${adv.isHomeless ? '<span style="color:var(--red-hi);">🏚 無家可歸！</span>' : ''}
         ${adv.homeGX ? `<span style="color:var(--text-dim);">🏠 (${adv.homeGX},${adv.homeGY})</span>` : ''}
-      </div>`
+      </div>
+      ${adv.canPromote ? `<button class="adv-promote-btn" onclick="openSkillTree(${adv.id})">✨ 可升職！點擊查看</button>` : ''}
+      ${renderAdvSkills(adv)}`
     c.appendChild(div)
   })
+}
+
+// ── Adv skill display ──
+function renderAdvSkills(adv) {
+  const cs = GAME_DATA.classSkills[adv.classId]
+  if (!cs || adv.skills.length === 0) return ''
+  const activeCD = adv.skillCooldowns[cs.active.id] || 0
+  const cdText = activeCD > 0 ? `<span style="color:var(--red-hi);">CD ${Math.ceil(activeCD)}s</span>` : '<span style="color:var(--green-hi);">就緒</span>'
+  return `<div class="adv-skills-row">
+    <span class="skill-chip active-skill">${cs.active.emoji} ${cs.active.name} ${cdText}</span>
+    <span class="skill-chip passive-skill">${cs.passive.emoji} ${cs.passive.name}</span>
+  </div>`
+}
+
+// ── Skill Tree Overlay ──
+export function openSkillTree(advId) {
+  const adv = G.adventurers.find(a => a.id === advId); if (!adv) return
+  const promo = GAME_DATA.classPromotions[adv.classId]; if (!promo) return
+  G.paused = true
+
+  const existing = document.getElementById('skill-tree-overlay')
+  if (existing) existing.remove()
+
+  const branches = [...new Set(promo.branches)]
+  const branchHtml = branches.map(cid => {
+    const cls = GAME_DATA.adventurerClasses.find(c => c.id === cid)
+    const cs = GAME_DATA.classSkills[cid]
+    if (!cls || !cs) return ''
+    return `<div class="st-branch" onclick="confirmPromotion(${advId}, '${cid}')">
+      <div class="st-branch-header">
+        <span class="st-class-emoji">${cls.emoji}</span>
+        <span class="st-class-name">${cls.name}</span>
+      </div>
+      <div class="st-stats">
+        HP ${cls.baseHP} · ATK ${cls.baseATK} · DEF ${cls.baseDEF}
+      </div>
+      <div class="st-skill active">
+        <span class="st-skill-type">主動</span>
+        <span>${cs.active.emoji} <strong>${cs.active.name}</strong></span>
+        <span class="st-skill-desc">${cs.active.desc}</span>
+        <span class="st-skill-cd">⏱ CD ${cs.active.cd}s</span>
+      </div>
+      <div class="st-skill passive">
+        <span class="st-skill-type passive">被動</span>
+        <span>${cs.passive.emoji} <strong>${cs.passive.name}</strong></span>
+        <span class="st-skill-desc">${cs.passive.desc}</span>
+      </div>
+      <div class="st-select-hint">點擊選擇</div>
+    </div>`
+  }).join('<div class="st-vs">VS</div>')
+
+  const curCls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
+  const overlay = document.createElement('div')
+  overlay.id = 'skill-tree-overlay'
+  overlay.innerHTML = `
+    <div id="skill-tree-box">
+      <div class="st-header">
+        <span class="st-title">⚔ 職業升級</span>
+        <button class="st-close" onclick="closeSkillTree()">✕</button>
+      </div>
+      <div class="st-current">
+        ${curCls?.emoji} <strong>${adv.name}</strong> · ${curCls?.name} Lv.${adv.level}
+      </div>
+      <div class="st-desc">${promo.desc}</div>
+      <div class="st-branches">${branchHtml}</div>
+    </div>`
+  document.body.appendChild(overlay)
+}
+
+export function closeSkillTree() {
+  const el = document.getElementById('skill-tree-overlay')
+  if (el) el.remove()
+  G.paused = false
+}
+
+export function confirmPromotion(advId, newClassId) {
+  const adv = G.adventurers.find(a => a.id === advId); if (!adv) return
+  const newCls = GAME_DATA.adventurerClasses.find(c => c.id === newClassId)
+  const cs = GAME_DATA.classSkills[newClassId]
+  if (!newCls || !cs) return
+
+  adv.classId = newClassId
+  adv.canPromote = false
+  // Recalculate base stats from new class
+  adv.maxHp = newCls.baseHP + adv.level * 20
+  adv.hp = adv.maxHp
+  adv.atk = newCls.baseATK + adv.level * 3
+  adv.def = newCls.baseDEF + adv.level * 2
+  adv.spd = newCls.baseSPD
+  adv.mpMax = newCls.mpMax
+  adv.mp = adv.mpMax
+  adv.expNeeded = newCls.expToLevel * adv.level
+
+  // Apply passive skill
+  applySkillPassive(adv, cs.passive)
+  adv.skills = [cs.active.id, cs.passive.id]
+  adv.skillCooldowns[cs.active.id] = 0
+
+  addLog(`🌟 ${adv.name} 成功升職為 ${newCls.emoji} ${newCls.name}！習得技能：${cs.active.emoji}${cs.active.name} + ${cs.passive.emoji}${cs.passive.name}`, 'level')
+  G.popularity += 5; G.townExp += 100
+  applyResidentBonuses(); checkTownLevelUp(); updateTopBar()
+  closeSkillTree()
+  buildAdvPanel()
 }
 
 // ── Resident panel ──

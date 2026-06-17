@@ -19,16 +19,15 @@ src/
 └── style.css    All CSS variables and component styles
 ```
 
-## Migration Status
-- [x] data.js — Complete (all GAME_DATA migrated)
-- [x] state.js — Complete (G state + initState)
-- [x] style.css — Complete
-- [ ] render.js — TODO: migrate drawTile, drawBuilding3D, drawAdventurer, drawMonster, drawTownWalls, FX system
-- [ ] ui.js — TODO: migrate buildBuildPanel, buildAdvPanel, buildResidentPanel, buildQuestPanel, buildForgeUI, all overlays
-- [ ] fsm.js — TODO: migrate updateAdventurer + all FSM cases
-- [ ] economy.js — TODO: migrate tickEconomy, checkTownLevelUp, applyResidentBonuses
-- [ ] systems.js — TODO: migrate tickSiege, launchSiege, tickResourceRespawn, dungeon battle
-- [ ] sprites.js — TODO: migrate SPRITES and MONSTER_SPRITES pixel data
+## Migration Status — COMPLETE
+All 10 modules fully migrated from monolithic index.html to Vite ES modules.
+- [x] data.js, state.js, style.css, sprites.js
+- [x] render.js — drawTile, drawBuilding3D, drawAdventurer, drawMonster, FX, day/night overlay
+- [x] ui.js — all DOM panels, overlays, building placement, dungeon, forge
+- [x] fsm.js — updateAdventurer, all 10 FSM states
+- [x] economy.js — tickEconomy, day/night phase tracking, town level up
+- [x] systems.js — siege, night raid, construction timer, forge, wall, resource respawn
+- [x] save.js — localStorage save/load, difficulty presets (new file, not in original)
 
 ## Key Design Decisions
 - All modules share the same G object from state.js (no prop drilling)

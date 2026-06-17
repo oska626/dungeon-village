@@ -58,7 +58,25 @@ export function createAdventurer() {
     _blockAnim: 0, _attackPose: 0, _lastDx: 0, _prevX: undefined,
     homeGX: null, homeGY: null,
     restTimer: 0, isHomeless: false,
+    skills: [], skillCooldowns: {}, canPromote: false,
+    _passiveBlockBonus: 0, _rangeBonus: 0, _combatSpeedMult: 1, _mpRegenMult: 1,
+    _bloodThirst: false, _darkAura: false, _holyAura: false,
   }
+}
+
+export function applySkillPassive(adv, passive) {
+  const fx = passive.statEffect || {}
+  if (fx.hpMult)        { adv.maxHp = Math.floor(adv.maxHp * fx.hpMult); adv.hp = adv.maxHp }
+  if (fx.atkMult)       { adv.atk  = Math.floor(adv.atk  * fx.atkMult) }
+  if (fx.defMult)       { adv.def  = Math.floor(adv.def  * fx.defMult) }
+  if (fx.mpMult)        { adv.mpMax = Math.floor(adv.mpMax * fx.mpMult); adv.mp = adv.mpMax }
+  if (fx.blockBonus)    { adv._passiveBlockBonus = (adv._passiveBlockBonus || 0) + fx.blockBonus }
+  if (fx.rangeFlatBonus){ adv._rangeBonus = (adv._rangeBonus || 0) + fx.rangeFlatBonus }
+  if (fx.speedMult)     { adv._combatSpeedMult = fx.speedMult }
+  if (fx.mpRegenMult)   { adv._mpRegenMult = fx.mpRegenMult }
+  if (fx.bloodThirst)   { adv._bloodThirst = true }
+  if (fx.darkAura)      { adv._darkAura    = true }
+  if (fx.holyAura)      { adv._holyAura    = true }
 }
 
 export function checkAdvLevelUp(adv) {
@@ -69,6 +87,12 @@ export function checkAdvLevelUp(adv) {
     adv.expNeeded = cls.expToLevel * adv.level
     addLog(`🎉 ${adv.name} 升至 Lv.${adv.level}！`, 'level')
     G.popularity += 2
+  }
+  // Check if promotion is available
+  const promo = GAME_DATA.classPromotions[adv.classId]
+  if (promo && adv.level >= promo.reqLevel && !adv.canPromote) {
+    adv.canPromote = true
+    addLog(`✨ ${adv.name} 可以升職了！點擊冒險者資料查看！`, 'level')
   }
 }
 
@@ -120,7 +144,7 @@ export function applyResidentBonuses() {
     const shieldBonus = [0, 0.10, 0.18, 0.28][armorLv] || 0
     const armorerBonus = G.residents.filter(r => r.residentJob?.id === 'armorer').length * 0.08
     adv.shieldLevel = armorLv
-    adv.blockChance = Math.min(0.60, base + shieldBonus + armorerBonus)
+    adv.blockChance = Math.min(0.60, base + shieldBonus + armorerBonus + (adv._passiveBlockBonus || 0))
   })
 }
 
@@ -173,7 +197,12 @@ export function showSynergyPopup(text) {
 export function updateAdventurer(adv, dt) {
   if (adv.state === 'InDungeon') return
   adv.stateTimer += dt * G.speed
-  adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * 0.3)
+  const mpRate = 0.3 * (adv._mpRegenMult || 1)
+  adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * mpRate)
+  // Tick active skill cooldowns
+  for (const sid in adv.skillCooldowns) {
+    adv.skillCooldowns[sid] = Math.max(0, adv.skillCooldowns[sid] - dt * G.speed)
+  }
 
   adv.satisfactionTimer += dt * G.speed
   if (adv.satisfactionTimer > 5) {
@@ -357,18 +386,46 @@ export function updateAdventurer(adv, dt) {
           adv.combatTimer += dt * G.speed * 0.3; break
         }
       }
+      const attackThreshold = 0.75 * (adv._combatSpeedMult || 1)
       adv.combatTimer += dt * G.speed
-      if (adv.combatTimer > 0.75) {
+      if (adv.combatTimer > attackThreshold) {
         adv.combatTimer = 0
         const m = adv.combatTarget
         const cls = GAME_DATA.adventurerClasses.find(c => c.id === adv.classId)
         const atype = cls ? cls.attackType : 'melee'
         const { x: mx, y: my } = gridToScreen(m.gx, m.gy)
         const ax = adv.screenX, ay = adv.screenY
-        const useSkill = cls && adv.mp >= cls.skill.mpCost && Math.random() < 0.28
+
+        // Determine which skill to use: promoted active skill (CD ready) or base class skill
+        const csEntry = GAME_DATA.classSkills[adv.classId]
+        const activeSkill = csEntry ? csEntry.active : null
+        const activeCdReady = activeSkill && (adv.skillCooldowns[activeSkill.id] || 0) === 0
+        const useActiveSkill = activeCdReady && Math.random() < 0.35
+        const useBaseSkill = !useActiveSkill && cls && adv.mp >= cls.skill.mpCost && Math.random() < 0.28
+        const useSkill = useActiveSkill || useBaseSkill
         let dmgToMon
 
-        if (useSkill) {
+        if (useActiveSkill) {
+          const def = activeSkill.ignoreDef ? 0 : m.def
+          dmgToMon = Math.max(1, Math.floor(adv.atk * activeSkill.dmgMult) - def + Math.floor(Math.random() * 8))
+          adv.skillCooldowns[activeSkill.id] = activeSkill.cd
+          adv._attackPose = 1
+          const stype = activeSkill.skillType || atype
+          if (stype === 'melee') {
+            addCombatFX(mx, my - 10, '', '#ffffff', 'slash2')
+            spawnParticles(mx, my - 10, '#cc88ff', 10, 20, 3.5)
+            setTimeout(() => addCombatFX(mx, my - 28, activeSkill.emoji + ' ' + dmgToMon, '#cc88ff', 'text'), 180)
+          } else if (stype === 'ranged') {
+            addCombatFX(ax, ay - 10, '', '#88ffaa', 'multiArrow', mx, my - 10)
+            setTimeout(() => { spawnParticles(mx, my - 10, '#aaff88', 8, 16, 3); addCombatFX(mx, my - 28, activeSkill.emoji + ' ' + dmgToMon, '#88ff88', 'text') }, 340)
+          } else {
+            addCombatFX(ax, ay - 18, '', '#ff88ff', 'fireball', mx, my - 10)
+            setTimeout(() => { addCombatFX(mx, my - 10, '', '#ff88ff', 'explosion'); spawnParticles(mx, my - 10, '#ff88ff', 14, 24, 4); addCombatFX(mx, my - 32, activeSkill.emoji + ' ' + dmgToMon, '#ff88ff', 'text') }, 400)
+          }
+          // Special active skill effects
+          if (activeSkill.healPct)    { const heal = Math.floor(dmgToMon * activeSkill.healPct); adv.hp = Math.min(adv.maxHp, adv.hp + heal) }
+          if (activeSkill.selfDmgPct) { adv.hp = Math.max(1, adv.hp - Math.floor(adv.maxHp * activeSkill.selfDmgPct)) }
+        } else if (useBaseSkill) {
           dmgToMon = Math.max(1, Math.floor(adv.atk * cls.skill.dmgMult) - m.def + Math.floor(Math.random() * 6))
           adv.mp -= cls.skill.mpCost; adv._attackPose = 1
           const stype = cls.skill.skillType || atype
@@ -403,6 +460,8 @@ export function updateAdventurer(adv, dt) {
             setTimeout(() => { addCombatFX(mx, my - 10, '', '#cc88ff', 'explosion'); spawnParticles(mx, my - 10, '#cc88ff', 7, 16, 2.5); addCombatFX(mx, my - 26, '-' + dmgToMon, '#cc88ff', 'text') }, 360)
           }
         }
+        // Passive: blood thirst — heal on hit
+        if (adv._bloodThirst && dmgToMon > 0) { adv.hp = Math.min(adv.maxHp, adv.hp + Math.floor(dmgToMon * 0.08)) }
 
         m.hp -= dmgToMon
         if (m.hp <= 0) {
@@ -443,6 +502,8 @@ export function updateAdventurer(adv, dt) {
             adv.hp -= dmgToAdv
             addCombatFX(ax, ay - 18, '-' + dmgToAdv, '#ff8833', 'text')
             spawnParticles(ax, ay - 10, '#ff6644', 4, 10, 1.8)
+            // Passive: dark aura — reflect 10% damage back
+            if (adv._darkAura) { const reflect = Math.floor(dmgToAdv * 0.1); m.hp -= reflect }
             if (adv.hp <= 0) {
               adv.hp = 1; adv._attackPose = 0; adv.restTimer = 10
               addLog(`💔 ${adv.name} 倒下了！需要回家休息 10 秒...`, 'combat')

@@ -20,13 +20,76 @@ export const GAME_DATA = {
   ],
 
   adventurerClasses: [
-    { id:"novice",    name:"見習生",   emoji:"🧑",  baseHP:100, baseATK:8,  baseDEF:5,  baseSPD:1.2,  unlockPop:0,   color:"#aaaaaa", expToLevel:100, goldCapacity:150, mpMax:5,  attackType:"melee",  attackRange:1, baseBlock:0.05, skill:{ name:"蠻力",   emoji:"💪", mpCost:2, dmgMult:1.8, skillType:"melee"  } },
-    { id:"knight",    name:"騎士",     emoji:"🗡️",  baseHP:200, baseATK:18, baseDEF:20, baseSPD:0.9,  unlockPop:50,  color:"#5599ff", expToLevel:200, goldCapacity:300, mpMax:8,  attackType:"melee",  attackRange:1, baseBlock:0.20, skill:{ name:"聖斬",   emoji:"⚡", mpCost:3, dmgMult:2.5, skillType:"melee"  } },
-    { id:"fire_mage", name:"火焰法師", emoji:"🔥",  baseHP:120, baseATK:35, baseDEF:8,  baseSPD:1.0,  unlockPop:80,  color:"#ff5522", expToLevel:250, goldCapacity:400, mpMax:12, attackType:"magic",  attackRange:4, baseBlock:0.05, skill:{ name:"炎爆",   emoji:"🔥", mpCost:4, dmgMult:3.5, skillType:"magic"  } },
-    { id:"ranger",    name:"遊俠",     emoji:"🏹",  baseHP:150, baseATK:22, baseDEF:12, baseSPD:1.4,  unlockPop:60,  color:"#55cc44", expToLevel:180, goldCapacity:250, mpMax:6,  attackType:"ranged", attackRange:5, baseBlock:0.08, skill:{ name:"連射",   emoji:"🎯", mpCost:2, dmgMult:2.0, skillType:"ranged" } },
-    { id:"paladin",   name:"聖騎士",   emoji:"✨",  baseHP:250, baseATK:25, baseDEF:28, baseSPD:0.85, unlockPop:100, color:"#ffdd55", expToLevel:300, goldCapacity:500, mpMax:10, attackType:"magic",  attackRange:3, baseBlock:0.25, skill:{ name:"神聖光", emoji:"✨", mpCost:5, dmgMult:3.0, skillType:"magic"  } },
-    { id:"assassin",  name:"刺客",     emoji:"🗡",  baseHP:110, baseATK:42, baseDEF:9,  baseSPD:1.6,  unlockPop:90,  color:"#aa44aa", expToLevel:220, goldCapacity:350, mpMax:7,  attackType:"melee",  attackRange:1, baseBlock:0.10, skill:{ name:"暗殺",   emoji:"💀", mpCost:3, dmgMult:4.0, skillType:"melee"  } },
+    // ── Tier 0 Starter ──
+    { id:"novice",      name:"見習生",   emoji:"🧑",  baseHP:100, baseATK:8,  baseDEF:5,  baseSPD:1.2,  unlockPop:0,   color:"#aaaaaa", expToLevel:100, goldCapacity:150, mpMax:5,  attackType:"melee",  attackRange:1, baseBlock:0.05, skill:{ name:"蠻力",   emoji:"💪", mpCost:2, dmgMult:1.8, skillType:"melee"  } },
+    // ── Tier 1 (promoted from novice) ──
+    { id:"warrior",     name:"戰士",     emoji:"⚔️",  baseHP:180, baseATK:22, baseDEF:18, baseSPD:1.0,  unlockPop:0,   color:"#cc8844", expToLevel:150, goldCapacity:250, mpMax:6,  attackType:"melee",  attackRange:1, baseBlock:0.15, skill:{ name:"破甲斬", emoji:"⚔️", mpCost:2, dmgMult:2.0, skillType:"melee"  } },
+    { id:"mage",        name:"法師",     emoji:"🪄",  baseHP:100, baseATK:28, baseDEF:6,  baseSPD:1.0,  unlockPop:0,   color:"#9966cc", expToLevel:150, goldCapacity:250, mpMax:10, attackType:"magic",  attackRange:3, baseBlock:0.05, skill:{ name:"魔力彈", emoji:"✨", mpCost:2, dmgMult:2.2, skillType:"magic"  } },
+    // ── Tier 2 ──
+    { id:"knight",      name:"騎士",     emoji:"🗡️",  baseHP:200, baseATK:18, baseDEF:20, baseSPD:0.9,  unlockPop:50,  color:"#5599ff", expToLevel:200, goldCapacity:300, mpMax:8,  attackType:"melee",  attackRange:1, baseBlock:0.20, skill:{ name:"聖斬",   emoji:"⚡", mpCost:3, dmgMult:2.5, skillType:"melee"  } },
+    { id:"berserker",   name:"狂戰士",   emoji:"🪓",  baseHP:160, baseATK:38, baseDEF:8,  baseSPD:1.3,  unlockPop:0,   color:"#cc3300", expToLevel:220, goldCapacity:300, mpMax:4,  attackType:"melee",  attackRange:1, baseBlock:0.08, skill:{ name:"狂暴",   emoji:"🩸", mpCost:2, dmgMult:2.8, skillType:"melee"  } },
+    { id:"fire_mage",   name:"火焰法師", emoji:"🔥",  baseHP:120, baseATK:35, baseDEF:8,  baseSPD:1.0,  unlockPop:80,  color:"#ff5522", expToLevel:250, goldCapacity:400, mpMax:12, attackType:"magic",  attackRange:4, baseBlock:0.05, skill:{ name:"炎爆",   emoji:"🔥", mpCost:4, dmgMult:3.5, skillType:"magic"  } },
+    { id:"ice_mage",    name:"冰霜法師", emoji:"❄️",  baseHP:130, baseATK:30, baseDEF:10, baseSPD:0.9,  unlockPop:0,   color:"#44aacc", expToLevel:250, goldCapacity:350, mpMax:12, attackType:"magic",  attackRange:4, baseBlock:0.05, skill:{ name:"冰霜術", emoji:"❄️", mpCost:3, dmgMult:2.8, skillType:"magic"  } },
+    { id:"ranger",      name:"遊俠",     emoji:"🏹",  baseHP:150, baseATK:22, baseDEF:12, baseSPD:1.4,  unlockPop:60,  color:"#55cc44", expToLevel:180, goldCapacity:250, mpMax:6,  attackType:"ranged", attackRange:5, baseBlock:0.08, skill:{ name:"連射",   emoji:"🎯", mpCost:2, dmgMult:2.0, skillType:"ranged" } },
+    { id:"assassin",    name:"刺客",     emoji:"🗡",  baseHP:110, baseATK:42, baseDEF:9,  baseSPD:1.6,  unlockPop:90,  color:"#aa44aa", expToLevel:220, goldCapacity:350, mpMax:7,  attackType:"melee",  attackRange:1, baseBlock:0.10, skill:{ name:"暗殺",   emoji:"💀", mpCost:3, dmgMult:4.0, skillType:"melee"  } },
+    // ── Tier 3 (max) ──
+    { id:"paladin",     name:"聖騎士",   emoji:"✨",  baseHP:250, baseATK:25, baseDEF:28, baseSPD:0.85, unlockPop:100, color:"#ffdd55", expToLevel:300, goldCapacity:500, mpMax:10, attackType:"magic",  attackRange:3, baseBlock:0.25, skill:{ name:"神聖光", emoji:"✨", mpCost:5, dmgMult:3.0, skillType:"magic"  } },
+    { id:"dark_knight", name:"暗黑騎士", emoji:"🌑",  baseHP:230, baseATK:28, baseDEF:22, baseSPD:0.9,  unlockPop:0,   color:"#442266", expToLevel:300, goldCapacity:450, mpMax:8,  attackType:"melee",  attackRange:1, baseBlock:0.22, skill:{ name:"黑暗劍", emoji:"💜", mpCost:4, dmgMult:2.8, skillType:"melee"  } },
+    { id:"archmage",    name:"大魔法師", emoji:"🌌",  baseHP:140, baseATK:50, baseDEF:10, baseSPD:0.95, unlockPop:0,   color:"#cc44ff", expToLevel:350, goldCapacity:500, mpMax:20, attackType:"magic",  attackRange:5, baseBlock:0.05, skill:{ name:"天隕石", emoji:"☄️", mpCost:6, dmgMult:5.0, skillType:"magic"  } },
+    { id:"dark_witch",  name:"黑暗魔女", emoji:"🧙",  baseHP:130, baseATK:45, baseDEF:8,  baseSPD:1.1,  unlockPop:0,   color:"#882244", expToLevel:320, goldCapacity:480, mpMax:16, attackType:"magic",  attackRange:4, baseBlock:0.05, skill:{ name:"詛咒",   emoji:"🔮", mpCost:4, dmgMult:2.5, skillType:"magic"  } },
+    { id:"sniper",      name:"狙擊手",   emoji:"🎯",  baseHP:140, baseATK:32, baseDEF:10, baseSPD:1.5,  unlockPop:0,   color:"#44bb44", expToLevel:200, goldCapacity:300, mpMax:6,  attackType:"ranged", attackRange:7, baseBlock:0.08, skill:{ name:"爆頭",   emoji:"💥", mpCost:2, dmgMult:3.5, skillType:"ranged" } },
+    { id:"beast_master",name:"御獸師",   emoji:"🐺",  baseHP:170, baseATK:25, baseDEF:15, baseSPD:1.2,  unlockPop:0,   color:"#886622", expToLevel:220, goldCapacity:280, mpMax:8,  attackType:"melee",  attackRange:2, baseBlock:0.12, skill:{ name:"狼嚙",   emoji:"🐺", mpCost:3, dmgMult:2.0, skillType:"melee"  } },
+    { id:"shadow",      name:"暗影刺客", emoji:"🌙",  baseHP:120, baseATK:50, baseDEF:10, baseSPD:1.8,  unlockPop:0,   color:"#664488", expToLevel:280, goldCapacity:400, mpMax:8,  attackType:"melee",  attackRange:1, baseBlock:0.12, skill:{ name:"死亡印", emoji:"💀", mpCost:3, dmgMult:4.5, skillType:"melee"  } },
   ],
+
+  // ── Class promotion skill tree ──
+  // active: triggered in combat (cooldown in seconds)
+  // passive: applied once when promoted (stat bonuses)
+  classSkills: {
+    warrior:     { active:{ id:'shield_bash',  name:'盾擊',     emoji:'🛡', cd:15, dmgMult:1.8, skillType:'melee',  desc:'重擊造成180%傷害' },
+                   passive:{ id:'iron_body',    name:'鐵身術',   emoji:'💪', desc:'最大HP +25%，DEF +20%',    statEffect:{ hpMult:1.25, defMult:1.2  } } },
+    mage:        { active:{ id:'mana_bolt',    name:'魔力彈',   emoji:'✨', cd:12, dmgMult:2.2, skillType:'magic',  desc:'造成220%魔法傷害' },
+                   passive:{ id:'arcane_mind',  name:'秘術之心', emoji:'🧠', desc:'MP上限 +80%，ATK +15%',    statEffect:{ mpMult:1.8,  atkMult:1.15 } } },
+    knight:      { active:{ id:'holy_slash',   name:'聖斬衝',   emoji:'⚡', cd:18, dmgMult:2.5, skillType:'melee',  desc:'造成250%傷害' },
+                   passive:{ id:'guard_stance', name:'守護姿態', emoji:'🔰', desc:'格擋率 +15%',               statEffect:{ blockBonus:0.15 } } },
+    berserker:   { active:{ id:'berserk_blow', name:'狂暴衝撞', emoji:'🩸', cd:20, dmgMult:3.0, skillType:'melee',  desc:'造成300%傷害，自身-5%HP', selfDmgPct:0.05 },
+                   passive:{ id:'blood_thirst', name:'嗜血',     emoji:'🦷', desc:'攻擊時回復傷害8%的HP',      statEffect:{ bloodThirst:true } } },
+    fire_mage:   { active:{ id:'fireball',     name:'炎爆術',   emoji:'🔥', cd:22, dmgMult:3.5, skillType:'magic',  desc:'造成350%火焰傷害' },
+                   passive:{ id:'fire_aura',    name:'火焰護體', emoji:'🌋', desc:'ATK +25%',                  statEffect:{ atkMult:1.25 } } },
+    ice_mage:    { active:{ id:'blizzard',     name:'冰風暴',   emoji:'❄️', cd:25, dmgMult:2.8, skillType:'magic',  desc:'造成280%冰雪傷害' },
+                   passive:{ id:'frost_body',   name:'冰霜之體', emoji:'🧊', desc:'DEF +30%，HP +15%',         statEffect:{ defMult:1.3, hpMult:1.15 } } },
+    ranger:      { active:{ id:'multishot',    name:'連環射擊', emoji:'🎯', cd:14, dmgMult:1.5, skillType:'ranged', desc:'連射造成150%傷害×2' },
+                   passive:{ id:'eagle_eye',    name:'鷹眼',     emoji:'👁', desc:'攻擊距離 +2，ATK +10%',     statEffect:{ rangeFlatBonus:2, atkMult:1.1 } } },
+    assassin:    { active:{ id:'backstab',     name:'背刺',     emoji:'💀', cd:16, dmgMult:4.0, skillType:'melee',  desc:'造成400%暗殺傷害' },
+                   passive:{ id:'shadow_step',  name:'影步',     emoji:'🌑', desc:'攻速 +30%，ATK +10%',       statEffect:{ speedMult:0.7, atkMult:1.1 } } },
+    paladin:     { active:{ id:'divine_light', name:'神聖光輝', emoji:'☀️', cd:28, dmgMult:3.0, skillType:'magic',  desc:'造成300%傷害，回復20%HP', healPct:0.2 },
+                   passive:{ id:'holy_aura',    name:'聖光護體', emoji:'✨', desc:'全隊HP回復 +30%，DEF +15%', statEffect:{ defMult:1.15, holyAura:true } } },
+    dark_knight: { active:{ id:'soul_drain',   name:'靈魂汲取', emoji:'💜', cd:24, dmgMult:2.8, skillType:'melee',  desc:'造成280%傷害，汲取50%為HP', healPct:0.5 },
+                   passive:{ id:'dark_aura',    name:'暗黑護體', emoji:'🌑', desc:'受傷時反彈10%，HP +20%',    statEffect:{ hpMult:1.2, darkAura:true } } },
+    archmage:    { active:{ id:'meteor',       name:'天降隕石', emoji:'☄️', cd:35, dmgMult:5.0, skillType:'magic',  desc:'造成500%魔法傷害' },
+                   passive:{ id:'mana_well',    name:'魔力源泉', emoji:'💧', desc:'MP回速 ×2，ATK +20%',       statEffect:{ mpRegenMult:2, atkMult:1.2 } } },
+    dark_witch:  { active:{ id:'hex',          name:'詛咒',     emoji:'🔮', cd:20, dmgMult:2.5, skillType:'magic',  desc:'造成250%傷害，穿透防禦', ignoreDef:true },
+                   passive:{ id:'dark_pact',    name:'暗黑契約', emoji:'📿', desc:'ATK +30%，HP -10%',         statEffect:{ atkMult:1.3, hpMult:0.9 } } },
+    sniper:      { active:{ id:'headshot',     name:'精準爆頭', emoji:'💥', cd:20, dmgMult:3.5, skillType:'ranged', desc:'造成350%傷害，穿透防禦', ignoreDef:true },
+                   passive:{ id:'camouflage',   name:'自然偽裝', emoji:'🌿', desc:'攻擊距離 +3，ATK +15%',     statEffect:{ rangeFlatBonus:3, atkMult:1.15 } } },
+    beast_master:{ active:{ id:'wolf_strike',  name:'狼群衝擊', emoji:'🐺', cd:18, dmgMult:2.0, skillType:'melee',  desc:'造成200%×2連擊傷害' },
+                   passive:{ id:'beast_bond',   name:'獸族羈絆', emoji:'🤝', desc:'ATK +20%，HP +25%',         statEffect:{ atkMult:1.2, hpMult:1.25 } } },
+    shadow:      { active:{ id:'death_mark',   name:'死亡印記', emoji:'🌙', cd:18, dmgMult:4.5, skillType:'melee',  desc:'造成450%傷害' },
+                   passive:{ id:'vanish',       name:'消影術',   emoji:'👻', desc:'攻速 +40%，ATK +15%',       statEffect:{ speedMult:0.6, atkMult:1.15 } } },
+  },
+
+  // ── Promotion chains ──
+  classPromotions: {
+    novice:    { reqLevel: 5,  branches: ['warrior',    'mage'],        desc:'選擇你的戰鬥風格！' },
+    warrior:   { reqLevel: 15, branches: ['knight',     'berserker'],   desc:'精進戰技，走向王者之路！' },
+    mage:      { reqLevel: 15, branches: ['fire_mage',  'ice_mage'],    desc:'掌握元素的力量！' },
+    knight:    { reqLevel: 25, branches: ['paladin',    'dark_knight'], desc:'選擇光明或黑暗！' },
+    fire_mage: { reqLevel: 25, branches: ['archmage',   'dark_witch'],  desc:'登上魔法的巔峰！' },
+    ranger:    { reqLevel: 15, branches: ['sniper',     'beast_master'],desc:'精通遠程或馭獸之術！' },
+    assassin:  { reqLevel: 20, branches: ['shadow',     'shadow'],      desc:'化為暗影，成為終極刺客！' },
+    berserker: { reqLevel: 25, branches: ['dark_knight','shadow'],      desc:'暴力的極致！' },
+    ice_mage:  { reqLevel: 25, branches: ['archmage',   'dark_witch'],  desc:'冰雪昇華為最強魔法！' },
+  },
 
   monsters: [
     { id:"slime",  name:"史萊姆", emoji:"🟢", hp:30,  atk:4,  def:2,  goldMin:3,  goldMax:8,  expReward:12,  spawnWeight:40, night:false },

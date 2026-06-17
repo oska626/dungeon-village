@@ -46,6 +46,8 @@ export const G = {
   dayPhase: 'day',       // 'dawn' | 'day' | 'dusk' | 'night'
   // Night siege (independent from day siege)
   nightSiege: { timer: 0, nextIn: 90 },
+  // Pause (skill tree overlay)
+  paused: false,
 }
 
 export function initState() {
