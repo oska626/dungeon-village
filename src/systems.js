@@ -38,15 +38,15 @@ export function tickResourceRespawn(dt) {
 
 // ── Siege waypoints ──
 export const SIEGE_WAYPOINTS = [
-  { gx: 19, gy: 8 },
-  { gx: 13, gy: 8 },
-  { gx: 10, gy: 8 },
-  { gx: 10, gy: 7 },
-  { gx: 7,  gy: 7 },
-  { gx: 5,  gy: 7 },
+  { gx: 21, gy: 8 },
+  { gx: 15, gy: 8 },
+  { gx: 9,  gy: 8 },
+  { gx: 9,  gy: 7 },
+  { gx: 6,  gy: 7 },
+  { gx: 4,  gy: 7 },
 ]
 
-const WALL_GX = 13  // wall boundary x position
+export const WALL_GX = 9  // wall boundary x position
 
 function siegeMonsterStep(sm, dt) {
   if (sm._wpIdx === undefined) sm._wpIdx = 0

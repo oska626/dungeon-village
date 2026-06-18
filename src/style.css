@@ -324,3 +324,46 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .tut-skip{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text-dim);font-size:11px;padding:4px;border-radius:5px;cursor:pointer;}
 .tut-skip:hover{background:rgba(255,255,255,.12);color:var(--parchment);}
 .tut-complete{font-size:14px;color:var(--gold);text-align:center;padding:4px 0;}
+
+/* ── Pause Overlay ── */
+#pause-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 900;
+  align-items: center;
+  justify-content: center;
+}
+#pause-overlay.show { display: flex; }
+#pause-box {
+  background: var(--bg-panel);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(240,165,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 240px;
+}
+.pause-title {
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.pause-menu-btn {
+  background: linear-gradient(180deg,#3a2a10,#1a1008);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  color: var(--parchment);
+  font-size: 15px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.pause-menu-btn:hover { background: linear-gradient(180deg,#5a4020,#2a1808); }
+.pause-hint { color: var(--text-dim); font-size: 12px; margin-top: 4px; }
+#pause-btn { font-size: 15px; }

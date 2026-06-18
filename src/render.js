@@ -254,7 +254,7 @@ function drawBuilding3DTo(targetCtx, gx, gy, bdata, bLevel, synActive, isSelecte
 function drawTownWalls() {
   const wt = GAME_DATA.wallTiers[G.wall.level - 1]; if (!wt) return
   const hp = G.wall.hp / G.wall.maxHp
-  const TOWN_X_MAX = 13
+  const TOWN_X_MAX = 9
   const damaged = hp < 0.3
   const img = IMG['wall_' + G.wall.level]
   const useSprite = img?.complete && img.naturalWidth > 0
@@ -470,9 +470,9 @@ export function render() {
 
   // Field zone overlay
   ctx.save(); ctx.globalAlpha = 0.13
-  for (let gx = 15; gx < G.gridW; gx++) for (let gy = 0; gy < G.gridH; gy++) if (G.grid[gy][gx] !== 2) drawTile(gx, gy, '#cc3333')
+  for (let gx = 10; gx < G.gridW; gx++) for (let gy = 0; gy < G.gridH; gy++) if (G.grid[gy][gx] !== 2) drawTile(gx, gy, '#cc3333')
   ctx.restore()
-  const { x: fx, y: fy } = gridToScreen(18, 1)
+  const { x: fx, y: fy } = gridToScreen(16, 1)
   ctx.font = 'bold 13px Noto Sans TC'; ctx.textAlign = 'center'
   ctx.fillStyle = 'rgba(255,80,80,.7)'; ctx.fillText('⚔ 探索區', fx, fy)
 

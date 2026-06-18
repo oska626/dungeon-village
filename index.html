@@ -27,6 +27,7 @@
     <button class="spd-btn active" onclick="setSpeed(1)">1×</button>
     <button class="spd-btn" onclick="setSpeed(2)">2×</button>
     <button class="spd-btn" onclick="setSpeed(4)">4×</button>
+    <button class="spd-btn" id="pause-btn" onclick="togglePause()">⏸</button>
   </div>
 </div>
 
@@ -130,6 +131,16 @@
     <p id="lu-msg"></p>
     <div class="lu-rewards" id="lu-rewards"></div>
     <button class="btn-action" onclick="closeLevelUp()" style="font-size:13px;padding:8px 18px;">繼續！</button>
+  </div>
+</div>
+
+<!-- PAUSE OVERLAY -->
+<div id="pause-overlay">
+  <div id="pause-box">
+    <div class="pause-title">⏸ 遊戲暫停</div>
+    <button class="pause-menu-btn" onclick="togglePause()">▶ 繼續遊戲</button>
+    <button class="pause-menu-btn" onclick="manualSave()">💾 儲存進度</button>
+    <div class="pause-hint">按 ESC 繼續</div>
   </div>
 </div>
 

@@ -50,7 +50,7 @@ export function createAdventurer() {
     satisfaction: 30 + Math.random() * 20,
     state: 'EnterTown', stateTimer: 0, targetBuilding: null,
     screenX: 0, screenY: 0,
-    inFieldGX: 15 + Math.floor(Math.random() * 4), inFieldGY: Math.floor(Math.random() * 8) + 1,
+    inFieldGX: 11 + Math.floor(Math.random() * 9), inFieldGY: Math.floor(Math.random() * 8) + 1,
     combatTarget: null, combatTimer: 0,
     isResident: false, residentJob: null,
     satisfactionTimer: 0,
@@ -362,7 +362,7 @@ export function updateAdventurer(adv, dt) {
               setState(adv, 'GatheringResource'); break
             }
           }
-          adv.inFieldGX = 15 + Math.floor(Math.random() * 5)
+          adv.inFieldGX = 11 + Math.floor(Math.random() * 9)
           adv.inFieldGY = 1 + Math.floor(Math.random() * (G.gridH - 3))
         }
       }

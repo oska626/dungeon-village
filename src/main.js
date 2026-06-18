@@ -32,7 +32,7 @@ Object.assign(window, {
   openWallMenu, closeWallMenu, upgradeWall, repairWall,
   openForge, closeForge, forgeUpgrade,
   openSkillTree, closeSkillTree, confirmPromotion,
-  restartGame, manualSave,
+  restartGame, manualSave, togglePause,
 })
 
 // ── Canvas events ──
@@ -42,6 +42,7 @@ canvas.addEventListener('click', e => {
   const { x: gx, y: gy } = screenToGrid(sx, sy)
   if (gx < 0 || gy < 0 || gx >= G.gridW || gy >= G.gridH) return
   if (G.placingBuilding) {
+    if (gx >= 9) { addLog('不能在探索區建造！', ''); return }
     if (G.grid[gy][gx] === 0) placeBuilding(G.placingBuilding, gx, gy)
     else addLog('此格已被佔用！', '')
     return
@@ -97,6 +98,14 @@ function flashSaveIndicator() {
 
 export function manualSave() {
   saveGame(); flashSaveIndicator()
+}
+
+export function togglePause() {
+  if (document.getElementById('skill-tree-overlay')) return
+  G.paused = !G.paused
+  document.getElementById('pause-overlay').classList.toggle('show', G.paused)
+  const btn = document.getElementById('pause-btn')
+  if (btn) btn.textContent = G.paused ? '▶' : '⏸'
 }
 
 // ── Init game world ──
@@ -204,6 +213,14 @@ function boot() {
   initStarField()
   resize()
   window.addEventListener('resize', resize)
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('skill-tree-overlay')) { closeSkillTree(); return }
+      if (document.getElementById('dungeon-overlay')?.classList.contains('show')) { closeDungeon(); return }
+      if (!G.gameOver) togglePause()
+    }
+  })
 
   // Diff card clicks
   document.querySelectorAll('.diff-card').forEach(card => {
