@@ -46,11 +46,22 @@ export const SIEGE_WAYPOINTS = [
   { gx: 4,  gy: 7 },
 ]
 
+// Second front: attack from the north (top edge → sweep down into town)
+export const SIEGE_WAYPOINTS_NORTH = [
+  { gx: 14, gy: 0 },
+  { gx: 14, gy: 4 },
+  { gx: 9,  gy: 4 },
+  { gx: 7,  gy: 5 },
+  { gx: 5,  gy: 6 },
+  { gx: 4,  gy: 7 },
+]
+
 export const WALL_GX = 9  // wall boundary x position
 
 function siegeMonsterStep(sm, dt) {
   if (sm._wpIdx === undefined) sm._wpIdx = 0
-  const wp = SIEGE_WAYPOINTS[sm._wpIdx]; if (!wp) return
+  const waypoints = sm.waypoints || SIEGE_WAYPOINTS
+  const wp = waypoints[sm._wpIdx]; if (!wp) return
 
   // Block at wall if it's still standing
   const wallAlive = G.wall.level > 0 && G.wall.hp > 0
@@ -64,7 +75,7 @@ function siegeMonsterStep(sm, dt) {
   const spd = 35 * G.speed
   if (dist < 8) {
     sm.gx = wp.gx; sm.gy = wp.gy
-    sm._wpIdx = Math.min(sm._wpIdx + 1, SIEGE_WAYPOINTS.length - 1)
+    sm._wpIdx = Math.min(sm._wpIdx + 1, waypoints.length - 1)
   } else {
     sm.screenX += (dx / dist) * spd * dt; sm.screenY += (dy / dist) * spd * dt
     const g = screenToGrid(sm.screenX, sm.screenY)
@@ -72,24 +83,36 @@ function siegeMonsterStep(sm, dt) {
   }
 }
 
-function spawnSiegeWave(monsterPool, waveSize, label, alertText) {
+function spawnSiegeWave(monsterPool, waveSize, label, alertText, waypoints, forceElite) {
   G.siege.active = true
   const wt = []; monsterPool.forEach(m => { for (let i = 0; i < m.spawnWeight; i++) wt.push(m) })
-  // Scale HP thicker when wave is large (cap fps impact)
   const sizeMult = Math.max(1, (waveSize - 4) * 0.15)
+  // A — exponential HP/ATK scaling per town level
+  const hpBase = Math.pow(1.22, G.townLevel) * sizeMult * (G._monsterHpMult || 1)
+  const atkBase = Math.pow(1.15, G.townLevel) * (G._monsterAtkMult || 1)
+  // C — elite spawn chance scales with level (max 35%)
+  const eliteChance = Math.min(0.35, 0.05 + G.townLevel * 0.025)
+  // North front: spawn from top edge
+  const isNorth = waypoints === SIEGE_WAYPOINTS_NORTH
   for (let i = 0; i < waveSize; i++) {
     const proto = wt[Math.floor(Math.random() * wt.length)]
-    const hpMult = (1 + G.townLevel * 0.3 + sizeMult) * (G._monsterHpMult || 1)
-    const atkMult = G._monsterAtkMult || 1
-    const spawnGX = G.gridW - 1, spawnGY = 7 + Math.floor(Math.random() * 2)
+    const isElite = forceElite || (!forceElite && Math.random() < eliteChance)
+    const eliteMult = isElite ? 2.2 : 1
+    const spawnGX = isNorth ? 14 : G.gridW - 1
+    const spawnGY = isNorth ? 0 : 7 + Math.floor(Math.random() * 2)
     const spawnScreen = gridToScreen(spawnGX, spawnGY)
     G.siege.siegeMonsters.push({
       ...proto,
+      name: isElite ? `精英${proto.name}` : proto.name,
+      emoji: isElite ? `⭐${proto.emoji}` : proto.emoji,
       gx: spawnGX, gy: spawnGY,
       screenX: spawnScreen.x + Math.random() * 20, screenY: spawnScreen.y + Math.random() * 10,
-      hp: Math.floor(proto.hp * hpMult), maxHp: Math.floor(proto.hp * hpMult),
-      atk: Math.floor(proto.atk * atkMult),
+      hp: Math.floor(proto.hp * hpBase * eliteMult),
+      maxHp: Math.floor(proto.hp * hpBase * eliteMult),
+      atk: Math.floor(proto.atk * atkBase * (isElite ? 1.5 : 1)),
       dead: false, attackTimer: 0, isSiege: true, _wpIdx: 0,
+      waypoints: waypoints || null,
+      isElite,
     })
   }
   const alertEl = document.getElementById('siege-alert')
@@ -103,6 +126,7 @@ export function launchSiege() {
   const advScale = Math.floor(G.adventurers.length / 2)
   const baseSize = 2 + Math.floor(G.townLevel * 1.2) + advScale
   const waveSize = Math.min(baseSize, 8 + Math.floor(G.townLevel / 3))
+
   // During tutorial: cap wave at 1 monster, half atk
   if (G.tutorial?.active) {
     const savedAtk = G._monsterAtkMult
@@ -111,7 +135,29 @@ export function launchSiege() {
     G._monsterAtkMult = savedAtk
     return
   }
+
+  // C — BOSS wave every 5 town levels
+  if (!G.siege.lastBossLevel) G.siege.lastBossLevel = 0
+  if (G.townLevel >= 5 && G.townLevel % 5 === 0 && G.siege.lastBossLevel < G.townLevel) {
+    G.siege.lastBossLevel = G.townLevel
+    // Pick strongest pool monster as BOSS, spawn 1 forced-elite
+    const bossPool = [...GAME_DATA.monsters].sort((a, b) => b.hp - a.hp)
+    spawnSiegeWave(bossPool, 1, `💀 BOSS來襲！（等級${G.townLevel}）`, `💀 BOSS波！強力精英怪物衝向村莊！`, null, true)
+    // Plus a small escort wave
+    const escortSize = Math.min(3, Math.floor(G.townLevel / 4))
+    if (escortSize > 0) spawnSiegeWave(GAME_DATA.monsters, escortSize, 'BOSS護衛', `💀 BOSS護衛部隊！`, null, false)
+    addLog(`💀 第${G.townLevel}級里程碑 BOSS攻城！`, 'combat')
+    return
+  }
+
   spawnSiegeWave(GAME_DATA.monsters, waveSize, '攻城', `👹 攻城！${waveSize}隻怪物衝向村莊！`)
+
+  // B — second front from the north at level 8+
+  if (G.townLevel >= 8) {
+    const northSize = Math.max(2, Math.floor(waveSize * 0.6))
+    spawnSiegeWave(GAME_DATA.monsters, northSize, '北路奇襲', `🗡 北路奇襲！${northSize}隻怪物從山嶺殺到！`, SIEGE_WAYPOINTS_NORTH)
+    addLog(`🗡 雙路夾攻！北方同時有敵軍入侵！`, 'combat')
+  }
 }
 
 export function launchNightRaid() {
@@ -155,7 +201,8 @@ export function tickSiege(dt) {
   if (G.gameOver) return
   tickConstruction(dt)
   tickNightSiege(dt)
-  const baseInterval = Math.max(20, 90 - G.townLevel * 14)
+  // Interval keeps shrinking past level 5; floor rises with difficulty
+  const baseInterval = Math.max(15, 120 - G.townLevel * 10)
   G.siege.interval = baseInterval
   G.siege.timer += dt * G.speed
 

@@ -26,7 +26,7 @@ export const G = {
   wall: { level: 0, hp: 0, maxHp: 0 },
   resourceNodes: [],
   globalResources: { wood:0, stone:0, iron:0, water:0, crystal:0 },
-  siege: { active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false },
+  siege: { active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
   gameOver: false,
   bounty: { active: false, elite: null },
   // UI dirty flags

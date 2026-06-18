@@ -151,7 +151,7 @@ function restartGame() {
     unlockedClasses: new Set(['novice','knight','fire_mage','ranger']),
     wall:{ level:0, hp:0, maxHp:0 },
     resourceNodes:[], globalResources:{ wood:0, stone:0, iron:0, water:0, crystal:0 },
-    siege:{ active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false },
+    siege:{ active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
     nightSiege:{ timer:0, nextIn:90 },
     gameOver:false, bounty:{ active:false, elite:null },
     _lastPanelGold:-1, _buildPanelDirty:true, _lastAdvKey:'', _lastResCount:-1,
