@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { GAME_DATA } from './data.js'
 import { gridToScreen, screenToGrid, addCombatFX, spawnParticles } from './render.js'
 import { addLog, updateQuestProgress } from './ui.js'
-import { updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
+import { updateTopBar, updateResourceDisplay, checkTownLevelUp, hasNegEffect } from './economy.js'
 import { stopAll, playTrack } from './audio.js'
 import { applyResidentBonuses, setState } from './fsm.js'
 
@@ -88,8 +88,8 @@ function spawnSiegeWave(monsterPool, waveSize, label, alertText, waypoints, forc
   const wt = []; monsterPool.forEach(m => { for (let i = 0; i < m.spawnWeight; i++) wt.push(m) })
   const sizeMult = Math.max(1, (waveSize - 4) * 0.15)
   // A — exponential HP/ATK scaling per town level
-  const hpBase = Math.pow(1.22, G.townLevel) * sizeMult * (G._monsterHpMult || 1)
-  const atkBase = Math.pow(1.15, G.townLevel) * (G._monsterAtkMult || 1)
+  const hpBase = Math.pow(1.22, G.townLevel) * sizeMult * (G._monsterHpMult || 1) * (hasNegEffect('mon_hp') ? 1.15 : 1)
+  const atkBase = Math.pow(1.15, G.townLevel) * (G._monsterAtkMult || 1) * (hasNegEffect('mon_atk') ? 1.1 : 1)
   // C — elite spawn chance scales with level (max 35%)
   const eliteChance = Math.min(0.35, 0.05 + G.townLevel * 0.025)
   // North front: spawn from top edge
@@ -202,7 +202,7 @@ export function tickSiege(dt) {
   tickConstruction(dt)
   tickNightSiege(dt)
   // Interval keeps shrinking past level 5; floor rises with difficulty
-  const baseInterval = Math.max(15, 120 - G.townLevel * 10)
+  const baseInterval = Math.max(15, 120 - G.townLevel * 10) * (hasNegEffect('fast_siege') ? 0.8 : 1)
   G.siege.interval = baseInterval
   G.siege.timer += dt * G.speed
 
@@ -303,8 +303,9 @@ export function upgradeWall() {
 export function repairWall() {
   if (G.wall.level === 0) { addLog('尚未建造城牆！先升級城牆。', ''); return }
   const wt = GAME_DATA.wallTiers[G.wall.level - 1]
-  if (G.gold < wt.repair) { addLog(`修復城牆需要 ${wt.repair}金`, ''); return }
-  G.gold -= wt.repair; G.wall.hp = G.wall.maxHp
+  const repairCost = Math.floor(wt.repair * (hasNegEffect('wall_repair') ? 1.5 : 1))
+  if (G.gold < repairCost) { addLog(`修復城牆需要 ${repairCost}金`, ''); return }
+  G.gold -= repairCost; G.wall.hp = G.wall.maxHp
   addLog(`🔧 城牆修復完成！HP恢復至 ${G.wall.maxHp}`, 'build')
   updateTopBar()
 }

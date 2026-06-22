@@ -5,18 +5,23 @@ import { addLog, updateQuestProgress } from './ui.js'
 import { applyResidentBonuses, createAdventurer } from './fsm.js'
 import { playTrack } from './audio.js'
 
-// Returns how many satisfaction tiers are active (0–3), and whether a specific effect is active
-export function satTierCount() { return Math.min(3, Math.floor(G.satisfaction / 30)) }
-export function hasSatEffect(id) {
-  const tier = satTierCount()
-  return G.satisfactionBonuses.slice(0, tier).includes(id)
-}
+// Satisfaction system only activates at town level 2+
+export function satSystemActive() { return G.townLevel >= 2 }
+export function satTierCount() { return satSystemActive() ? Math.min(3, Math.floor(G.satisfaction / 30)) : 0 }
+export function hasSatEffect(id) { return G.satisfactionBonuses.slice(0, satTierCount()).includes(id) }
+export function hasNegEffect(id) { return satSystemActive() && (G.satisfactionNegBonuses || []).includes(id) }
 
 export function renderSatPanel() {
   const panel = document.getElementById('sat-panel')
   if (!panel || panel.classList.contains('hidden')) return
   const tier = satTierCount()
-  panel.innerHTML = '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">😊 滿足度加成 (每30點)</div>' +
+  if (!satSystemActive()) {
+    panel.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:4px 0;">🔒 村等2解鎖滿足度系統</div>'
+    return
+  }
+  const negFxList = (G.satisfactionNegBonuses || []).map(id => GAME_DATA.satisfactionNegEffects.find(e => e.id === id)).filter(Boolean)
+  panel.innerHTML =
+    '<div style="font-size:11px;color:var(--text-dim);margin-bottom:5px;">✨ 正加成 (每30點滿足度)</div>' +
     G.satisfactionBonuses.map((id, i) => {
       const fx = GAME_DATA.satisfactionEffects.find(e => e.id === id)
       const active = i < tier
@@ -26,7 +31,13 @@ export function renderSatPanel() {
         <span>${fx.emoji} ${fx.name}</span>
         ${active ? '<span style="color:var(--green-hi);margin-left:auto;">✓</span>' : ''}
       </div>`
-    }).join('')
+    }).join('') +
+    (negFxList.length ? '<div style="font-size:11px;color:var(--red-hi);margin:7px 0 4px;">⚠️ 本局詛咒</div>' +
+      negFxList.map(fx => `<div class="sat-tier inactive" style="border-color:rgba(255,80,80,.15);">
+        <span class="sat-tier-badge" style="background:rgba(255,80,80,.2);color:var(--red-hi);">⚡</span>
+        <span>${fx.emoji} ${fx.name}</span>
+        <span style="color:var(--red-hi);margin-left:auto;">✗</span>
+      </div>`).join('') : '')
 }
 
 export function updateTopBar() {
@@ -60,6 +71,13 @@ export function checkTownLevelUp() {
     G.townExpNeeded = Math.floor(G.townExpNeeded * 1.75)
     showLevelUpOverlay(); updateStars(); applyResidentBonuses()
     addLog(`🏆 村莊升至 ${G.townLevel}星！`, 'level')
+    if (G.townLevel === 2) {
+      addLog('😊 滿足度系統解鎖！點擊頂欄滿足度查看加成', 'level')
+      ;(G.satisfactionNegBonuses || []).forEach(id => {
+        const fx = GAME_DATA.satisfactionNegEffects.find(e => e.id === id)
+        if (fx) addLog(`⚠️ 本局詛咒：${fx.emoji} ${fx.name}`, 'combat')
+      })
+    }
     updateQuestProgress()
   }
 }
@@ -114,7 +132,8 @@ export function tickEconomy(dt) {
       // weapon_shop refined: +1 ATK per day handled in end-of-day block below
     }
   })
-  G.popularity += G.buildings.length * 0.002 * dt * G.speed
+  const popRate = hasNegEffect('pop_slow') ? 0.8 : 1
+  G.popularity += G.buildings.length * 0.002 * dt * G.speed * popRate
   G.popularity = Math.min(200, G.popularity)
   const prevSatTier = satTierCount()
   G.satisfaction = Math.min(100, G.satisfaction + G.satisfactionBuff * 0.0004 * dt * G.speed)
@@ -129,6 +148,29 @@ export function tickEconomy(dt) {
     document.getElementById('day-num').textContent = G.day
     addLog(`第${G.day}天 — 日收入 ${Math.floor(G.townIncome)}金 | 人氣:${Math.floor(G.popularity)} | 滿足:${Math.floor(G.satisfaction)}`, 'earn')
     G.townIncome = 0
+
+    if (satSystemActive()) {
+      // Direction A: satisfaction penalties
+      if (G.satisfaction === 0) {
+        const pen = G.buildings.filter(b => !b.constructing).length * 3
+        G.gold = Math.max(0, G.gold - pen)
+        if (pen > 0) addLog(`😡 滿足度歸零！收入損失 ${pen}金`, 'combat')
+      }
+      if (G.satisfaction < 10 && Math.random() < 0.2 && G.adventurers.length > 0) {
+        const idx = Math.floor(Math.random() * G.adventurers.length)
+        const gone = G.adventurers.splice(idx, 1)[0]
+        addLog(`😢 ${gone.name} 因村莊太差勁而離去！`, 'combat')
+      }
+      // Neg effect: sat_decay
+      if (hasNegEffect('sat_decay')) G.satisfaction = Math.max(0, G.satisfaction - 3)
+      // Neg effect: maintenance fee
+      if (hasNegEffect('maintenance')) {
+        const fee = G.buildings.filter(b => !b.constructing).length * 5
+        G.gold = Math.max(0, G.gold - fee)
+        if (fee > 0) addLog(`🔧 建築維護費 -${fee}金`, '')
+      }
+    }
+
     if (G.buildings.find(b => b.id === 'weapon_shop' && b.refined))
       G.adventurers.forEach(a => { a.atk += 1 })
     updateQuestProgress()

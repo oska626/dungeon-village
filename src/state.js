@@ -27,7 +27,8 @@ export const G = {
   resourceNodes: [],
   globalResources: { wood:0, stone:0, iron:0, water:0, crystal:0 },
   siege: { active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
-  satisfactionBonuses: [],  // 3 randomly picked effect ids per game
+  satisfactionBonuses: [],     // 3 randomly picked positive effect ids per game
+  satisfactionNegBonuses: [],  // 1-3 randomly picked negative effect ids (by difficulty)
   gameOver: false,
   bounty: { active: false, elite: null },
   // UI dirty flags
@@ -81,6 +82,15 @@ export function initState() {
   for (let i = 0; i < 3 && pool.length; i++) {
     const idx = Math.floor(Math.random() * pool.length)
     G.satisfactionBonuses.push(pool.splice(idx, 1)[0].id)
+  }
+
+  // Randomly draw negative effects based on difficulty
+  const negCount = { easy: 1, normal: 2, hard: 3 }[G.difficulty] || 2
+  const negPool = [...GAME_DATA.satisfactionNegEffects]
+  G.satisfactionNegBonuses = []
+  for (let i = 0; i < negCount && negPool.length; i++) {
+    const idx = Math.floor(Math.random() * negPool.length)
+    G.satisfactionNegBonuses.push(negPool.splice(idx, 1)[0].id)
   }
 
   // Init resource nodes

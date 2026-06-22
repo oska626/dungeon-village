@@ -214,4 +214,23 @@ export const GAME_DATA = {
     { id:'income',     name:'收入+15%',     emoji:'💰', desc:'所有建築日收入提升15%' },
     { id:'combat_dmg', name:'傷害+10%',     emoji:'⚔️', desc:'冒險者戰鬥傷害提升10%' },
   ],
+
+  satisfactionNegEffects: [
+    { id:'mon_hp',       name:'怪物HP +15%',       emoji:'💀', desc:'所有怪物最大HP提升15%' },
+    { id:'build_cost',   name:'建築費 +20%',        emoji:'🏗', desc:'所有建築建造費用提升20%' },
+    { id:'exp_loss',     name:'EXP -20%',           emoji:'📉', desc:'冒險者戰鬥經驗獲取減少20%' },
+    { id:'slow_gather',  name:'採集 -30%',          emoji:'🌲', desc:'資源採集速度減慢30%' },
+    { id:'wall_repair',  name:'城牆維修 +50%',      emoji:'🏰', desc:'城牆修理費用提升50%' },
+    { id:'recruit_cost', name:'招募費 +30%',        emoji:'💸', desc:'招募冒險者費用提升30%' },
+    { id:'max_hp',       name:'冒險者HP -15%',      emoji:'❤️', desc:'所有冒險者最大HP減少15%' },
+    { id:'maintenance',  name:'每天維護費 -5金/棟', emoji:'🔧', desc:'每棟建築每天額外扣除5金維護費' },
+    { id:'mon_atk',      name:'怪物ATK +10%',       emoji:'⚔️', desc:'所有怪物攻擊力提升10%' },
+    { id:'dungeon_gold', name:'地城獎勵 -25%',      emoji:'🗝', desc:'地下城金幣獎勵減少25%' },
+    { id:'sat_decay',    name:'滿足度每天 -3',      emoji:'😤', desc:'滿足度每天自然下降3點' },
+    { id:'slow_heal',    name:'回血效率 -33%',      emoji:'💔', desc:'冒險者休息回血速度降低33%' },
+    { id:'upgrade_cost', name:'升級費 +25%',        emoji:'⬆️', desc:'建築升級費用提升25%' },
+    { id:'pop_slow',     name:'人氣增長 -20%',      emoji:'📊', desc:'人氣增長速度減少20%' },
+    { id:'fast_siege',   name:'攻城間隔 -20%',      emoji:'⚡', desc:'敵人攻城間隔縮短20%' },
+    { id:'lv1_recruit',  name:'招募固定Lv1',        emoji:'🔰', desc:'新冒險者初始等級固定為1級' },
+  ],
 }

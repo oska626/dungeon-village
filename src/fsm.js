@@ -3,7 +3,7 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen, addCombatFX, spawnParticles } from './render.js'
 // addLog, updateQuestProgress, updateTopBar imported lazily to avoid circular init issues
 import { addLog, updateQuestProgress } from './ui.js'
-import { depositToTown, updateTopBar, updateResourceDisplay, checkTownLevelUp, hasSatEffect } from './economy.js'
+import { depositToTown, updateTopBar, updateResourceDisplay, checkTownLevelUp, hasSatEffect, hasNegEffect, satSystemActive } from './economy.js'
 import { autoForgeIfPossible } from './systems.js'
 
 export function setState(adv, s) { adv.state = s; adv.stateTimer = 0 }
@@ -23,7 +23,7 @@ export function createAdventurer() {
   const pop = G.popularity
   const avail = GAME_DATA.adventurerClasses.filter(c => G.unlockedClasses.has(c.id) && pop >= c.unlockPop)
   const cls = avail[Math.floor(Math.random() * avail.length)] || GAME_DATA.adventurerClasses[0]
-  const level = Math.max(1, Math.floor(Math.random() * 3))
+  const level = hasNegEffect('lv1_recruit') ? 1 : Math.max(1, Math.floor(Math.random() * 3))
   const names = [
     '艾登','雷恩','莉娜','科爾','賽拉','菲恩','艾斯','洛可','妮亞','薩姆',
     '艾瑪','里昂','奧丁','薇薇','克拉','德魯','伊莉','賈斯','羅文','席拉',
@@ -42,7 +42,8 @@ export function createAdventurer() {
   return {
     id: G.advIdCounter++, name: chosenName,
     classId: cls.id, level,
-    hp: cls.baseHP + level * 20, maxHp: cls.baseHP + level * 20,
+    hp: Math.floor((cls.baseHP + level * 20) * (hasNegEffect('max_hp') ? 0.85 : 1)),
+    maxHp: Math.floor((cls.baseHP + level * 20) * (hasNegEffect('max_hp') ? 0.85 : 1)),
     atk: cls.baseATK + level * 3, def: cls.baseDEF + level * 2, spd: cls.baseSPD,
     mp: cls.mpMax, mpMax: cls.mpMax,
     gold: 0, exp: 0, expNeeded: cls.expToLevel * level,
@@ -213,7 +214,8 @@ export function updateAdventurer(adv, dt) {
       return d && d.buffStat === 'satisfaction'
     })
     adv.satisfaction = Math.min(100, adv.satisfaction + (nearShop ? 1 : 0.2))
-    if (!adv.isResident && adv.satisfaction >= 85 && G.residents.length < 8 && adv.level >= 2) {
+    const residentThreshold = (satSystemActive() && G.satisfaction < 20) ? 100 : 85
+    if (!adv.isResident && adv.satisfaction >= residentThreshold && G.residents.length < 8 && adv.level >= 2) {
       promoteResident(adv)
     }
   }
@@ -307,7 +309,7 @@ export function updateAdventurer(adv, dt) {
     case 'Resting': {
       const innCount = G.buildings.filter(b => b.id === 'inn').length
       const priestBonus = G.residents.filter(r => r.residentJob?.id === 'priest').length * 0.4
-      const healRate = (7 + innCount * 5) * (1 + priestBonus) * (hasSatEffect('hp_regen') ? 1.5 : 1) * dt * G.speed
+      const healRate = (7 + innCount * 5) * (1 + priestBonus) * (hasSatEffect('hp_regen') ? 1.5 : 1) * (hasNegEffect('slow_heal') ? 0.67 : 1) * dt * G.speed
       adv.hp = Math.min(adv.maxHp, adv.hp + healRate)
       adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * 0.8 * (hasSatEffect('mp_regen') ? 1.5 : 1))
       if (adv.stateTimer > 0.4 / G.speed) {
@@ -323,7 +325,8 @@ export function updateAdventurer(adv, dt) {
       if (!adv._gatherTarget) { setState(adv, 'ExploringField'); break }
       const rn = adv._gatherTarget
       const reachedNode = moveTowardGrid(adv, rn.gx, rn.gy, dt)
-      if (reachedNode || adv.stateTimer > 6 / G.speed) {
+      const gatherTime = 6 * (hasNegEffect('slow_gather') ? 1.43 : 1)
+      if (reachedNode || adv.stateTimer > gatherTime / G.speed) {
         adv.stateTimer = 0
         if (rn.stock > 0) {
           rn.stock = Math.max(0, rn.stock - 1)
@@ -473,7 +476,7 @@ export function updateAdventurer(adv, dt) {
           const exp = m.expReward
           const goldMult = 1 + (G.buildings.filter(b => b.id === 'market').length * 0.1) + G.expBuff / 200
           adv.gold = Math.min(adv.goldCapacity, adv.gold + Math.floor(gold * goldMult))
-          adv.exp += exp * (1 + G.expBuff / 100)
+          adv.exp += exp * (1 + G.expBuff / 100) * (hasNegEffect('exp_loss') ? 0.8 : 1)
           G.stats.kills++; G.stats.totalGold += gold
           spawnParticles(mx, my, '#f0a500', 10, 20, 3)
           addCombatFX(mx, my - 34, '+' + Math.floor(gold * goldMult) + '💰', '#f0a500', 'text')

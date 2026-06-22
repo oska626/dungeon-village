@@ -166,7 +166,7 @@ function restartGame() {
     resourceNodes:[], globalResources:{ wood:0, stone:0, iron:0, water:0, crystal:0 },
     siege:{ active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
     nightSiege:{ timer:0, nextIn:90 },
-    satisfactionBonuses:[],
+    satisfactionBonuses:[], satisfactionNegBonuses:[],
     gameOver:false, bounty:{ active:false, elite:null },
     _lastPanelGold:-1, _buildPanelDirty:true, _lastAdvKey:'', _lastResCount:-1,
     _lastQuestKey:'', _usedNames:null, _questFlash:null,

@@ -1,7 +1,7 @@
 import { G } from './state.js'
 import { GAME_DATA } from './data.js'
 import { canvas, combatFX, gridToScreen } from './render.js'
-import { updateTopBar, updateResourceDisplay, checkTownLevelUp, depositToTown } from './economy.js'
+import { updateTopBar, updateResourceDisplay, checkTownLevelUp, depositToTown, hasNegEffect } from './economy.js'
 import { applyResidentBonuses, recalcSynergies, createAdventurer, checkAdvLevelUp, promoteResident, applySkillPassive } from './fsm.js'
 import { repairBuilding, openForge, buildForgeUI, forgeUpgrade, upgradeWall, repairWall, openWallMenu, closeWallMenu } from './systems.js'
 
@@ -184,8 +184,9 @@ export function cancelPlacing() {
 }
 
 export function placeBuilding(bdata, gx, gy) {
-  if (G.gold < bdata.cost) { addLog('💸 金幣不足！', ''); return }
-  G.gold -= bdata.cost; G.grid[gy][gx] = 2
+  const buildCost = Math.floor(bdata.cost * (hasNegEffect('build_cost') ? 1.2 : 1))
+  if (G.gold < buildCost) { addLog('💸 金幣不足！', ''); return }
+  G.gold -= buildCost; G.grid[gy][gx] = 2
   const buildTime = bdata.buildTime || 20
   G.buildings.push({ id: bdata.id, gx, gy, level: 1, constructing: true, constructTimer: 0, constructTime: buildTime })
   G.buildingCacheDirty = true
@@ -212,7 +213,7 @@ export function instantCompleteBuilding(gx, gy) {
 export function upgradeBuilding(gx, gy) {
   const b = G.buildings.find(x => x.gx === gx && x.gy === gy); if (!b || b.level >= 3) return
   const d = GAME_DATA.buildings.find(x => x.id === b.id)
-  const cost = Math.floor(d.cost * (b.level * 0.8))
+  const cost = Math.floor(d.cost * (b.level * 0.8) * (hasNegEffect('upgrade_cost') ? 1.25 : 1))
   if (G.gold < cost) { addLog('💸 金幣不足！', ''); return }
   G.gold -= cost; b.level++; G.buildingCacheDirty = true
   addLog(`⬆ ${d.emoji}${d.name} 升級至 Lv.${b.level}！`, 'build')
@@ -482,7 +483,7 @@ function getVacantHouse() {
 export function recruitAdventurer() {
   const house = getVacantHouse()
   if (!house) { addLog('🏡 需要先建造空置住宅才可招募冒險者！', ''); return }
-  const cost = 80 + G.adventurers.length * 40
+  const cost = Math.floor((80 + G.adventurers.length * 40) * (hasNegEffect('recruit_cost') ? 1.3 : 1))
   if (G.gold < cost) { addLog('招募費用 ' + cost + '金 — 金幣不足！', ''); return }
   if (G.adventurers.length >= G.maxAdventurers) { addLog('冒險者已達上限 ' + G.maxAdventurers + '！', ''); return }
   G.gold -= cost
@@ -664,7 +665,7 @@ function endDungeonBattle(won) {
   const res = document.getElementById('battle-result'); res.style.display = 'block'
   ;['ba-attack', 'ba-skill', 'ba-item', 'ba-flee'].forEach(id => { document.getElementById(id).className = 'ba-btn disabled' })
   if (won) {
-    const goldGain = fl.goldReward + Math.floor(Math.random() * fl.goldReward * 0.5)
+    const goldGain = Math.floor((fl.goldReward + Math.floor(Math.random() * fl.goldReward * 0.5)) * (hasNegEffect('dungeon_gold') ? 0.75 : 1))
     const expGain = fl.expReward
     D.hero.gold = Math.min(D.hero.goldCapacity, D.hero.gold + goldGain)
     D.hero.exp += expGain; G.gold += Math.floor(goldGain * 0.3)
