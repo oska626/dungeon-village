@@ -113,9 +113,9 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .log-quest{color:var(--orange-hi)!important;}
 .log-resident{color:var(--gold-pale)!important;}
 
-#bottombar{background:var(--bg-panel);border-top:2px solid var(--border);padding:5px 8px;display:flex;align-items:center;gap:7px;flex-shrink:0;font-size:13px;}
+#bottombar{background:var(--bg-panel);border-top:2px solid var(--border);padding:6px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:13px;}
 #status-msg{color:var(--text-dim);flex:1;font-size:13px;}
-.btn-action{background:linear-gradient(180deg,var(--gold-dim),#5a3000);border:1px solid var(--gold);color:#fff;font-family:'Press Start 2P',monospace;font-size:9px;padding:5px 8px;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-action{background:linear-gradient(180deg,var(--gold-dim),#5a3000);border:1px solid var(--gold);color:#fff;font-family:'Press Start 2P',monospace;font-size:11px;padding:8px 13px;border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-action:hover{background:linear-gradient(180deg,var(--gold),var(--gold-dim));box-shadow:0 0 8px rgba(240,165,0,.4);}
 .btn-action.blue{background:linear-gradient(180deg,var(--blue),#0a3a5a);border-color:var(--blue-hi);}
 .btn-action.blue:hover{background:linear-gradient(180deg,var(--blue-hi),var(--blue));}

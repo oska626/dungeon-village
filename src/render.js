@@ -659,9 +659,6 @@ export function render() {
   ctx.save(); ctx.globalAlpha = 0.13
   for (let gx = 10; gx < G.gridW; gx++) for (let gy = 0; gy < G.gridH; gy++) if (G.grid[gy][gx] !== 2) drawTile(gx, gy, '#cc3333')
   ctx.restore()
-  const { x: fx, y: fy } = gridToScreen(16, 1)
-  ctx.font = 'bold 13px Noto Sans TC'; ctx.textAlign = 'center'
-  ctx.fillStyle = 'rgba(255,80,80,.7)'; ctx.fillText('⚔ 探索區', fx, fy)
 
   if (G.wall.level > 0) drawTownWalls()
 
