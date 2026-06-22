@@ -77,6 +77,7 @@ function gameLoop(ts) {
   if (panelTimer > 0.6) {
     panelTimer = 0
     updateTopBar(); updateResourceDisplay(); buildAdvPanel()
+    if (document.getElementById('left-tab-build').style.display !== 'none') buildBuildPanel()
     if (document.getElementById('right-tab-residents').style.display !== 'none') buildResidentPanel()
   }
 
