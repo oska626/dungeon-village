@@ -46,7 +46,9 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .bc-img{width:56px;height:auto;object-fit:contain;image-rendering:pixelated;}
 .bc-info{flex:1;min-width:0;}
 .bc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
-.bc-name{font-size:14px;font-weight:700;}.bc-cost{font-size:13px;color:var(--gold);white-space:nowrap;}
+.bc-name{font-size:14px;font-weight:700;flex:1;}.bc-cost{font-size:13px;color:var(--gold);white-space:nowrap;}
+.bc-pop-req{font-size:12px;color:var(--text-dim);white-space:nowrap;margin-left:5px;}
+.bc-pop-req.locked{color:var(--red-hi);}
 .bc-desc{font-size:11px;color:var(--text-dim);line-height:1.35;}
 .bc-stats{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
 .bc-stat{font-size:12px;background:rgba(0,0,0,.3);border-radius:3px;padding:1px 4px;}
