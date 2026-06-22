@@ -8,6 +8,14 @@ const wrap = document.getElementById('world-wrap')
 
 export let ISO_W = 44, ISO_H = 22, OFFSET_X = 0, OFFSET_Y = 0
 
+// ── Camera (zoom + pan) ──────────────────────────────────────────────────────
+export const camera = { zoom: 1, panX: 0, panY: 0 }
+const MIN_ZOOM = 0.5, MAX_ZOOM = 2.5
+
+export function rawToLogical(sx, sy) {
+  return { x: (sx - camera.panX) / camera.zoom, y: (sy - camera.panY) / camera.zoom }
+}
+
 // ── Sprite images ────────────────────────────────────────────────────────────
 const IMG = {}
 function loadImg(key, src) {
@@ -63,10 +71,39 @@ export function shadeColor(c, amt) {
 
 export let mouseGrid = { x: -1, y: -1 }
 export let mouseScreen = { x: 0, y: 0 }
+
+let _panning = false, _panLastX = 0, _panLastY = 0
+
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect()
-  mouseScreen = { x: e.clientX - r.left, y: e.clientY - r.top }
+  const raw = { x: e.clientX - r.left, y: e.clientY - r.top }
+  mouseScreen = rawToLogical(raw.x, raw.y)
   mouseGrid = screenToGrid(mouseScreen.x, mouseScreen.y)
+  // Middle-button drag → pan
+  if (e.buttons === 4) {
+    camera.panX += e.clientX - _panLastX
+    camera.panY += e.clientY - _panLastY
+    G.buildingCacheDirty = true
+  }
+  _panLastX = e.clientX; _panLastY = e.clientY
+})
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault()
+  const r = canvas.getBoundingClientRect()
+  const mx = e.clientX - r.left, my = e.clientY - r.top
+  const oldZoom = camera.zoom
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12
+  camera.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, camera.zoom * factor))
+  // Zoom around cursor: keep the logical point under cursor fixed
+  camera.panX = mx + (camera.panX - mx) * (camera.zoom / oldZoom)
+  camera.panY = my + (camera.panY - my) * (camera.zoom / oldZoom)
+  G.buildingCacheDirty = true
+}, { passive: false })
+
+canvas.addEventListener('dblclick', () => {
+  camera.zoom = 1; camera.panX = 0; camera.panY = 0
+  G.buildingCacheDirty = true
 })
 
 // ── Combat FX ──
@@ -451,6 +488,10 @@ function drawMonster(m) {
 export function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+  // === WORLD SPACE (camera transform) ===
+  ctx.save()
+  ctx.setTransform(camera.zoom, 0, 0, camera.zoom, camera.panX, camera.panY)
+
   // Ground tiles
   for (let gy = 0; gy < G.gridH; gy++) {
     for (let gx = 0; gx < G.gridW; gx++) {
@@ -570,82 +611,7 @@ export function render() {
     if (p.alpha <= 0) particles.splice(i, 1)
   }
 
-  // Day/night overlay
-  {
-    const t = G.timeOfDay
-    let overlayColor = null
-    if (t < 0.08) {
-      // Deep night fading to dawn
-      const f = t / 0.08
-      overlayColor = `rgba(0,10,60,${0.45 * (1 - f) + 0.15 * f})`
-    } else if (t < 0.18) {
-      // Dawn: orange-red
-      const f = (t - 0.08) / 0.10
-      overlayColor = `rgba(200,80,20,${0.18 * (1 - f)})`
-    } else if (t < 0.62) {
-      // Day: no overlay
-      overlayColor = null
-    } else if (t < 0.72) {
-      // Dusk: orange-purple fading in
-      const f = (t - 0.62) / 0.10
-      overlayColor = `rgba(160,60,100,${0.22 * f})`
-    } else if (t < 0.82) {
-      // Dusk deepening to night
-      const f = (t - 0.72) / 0.10
-      overlayColor = `rgba(${Math.floor(160*(1-f))},${Math.floor(60*(1-f))},${Math.floor(100*(1-f)+60*f)},${0.22 + 0.23*f})`
-    } else {
-      // Night
-      overlayColor = 'rgba(0,10,60,0.45)'
-    }
-    if (overlayColor) {
-      ctx.save(); ctx.globalAlpha = 1
-      ctx.fillStyle = overlayColor
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.restore()
-    }
-    // Stars at night
-    if (t > 0.75 || t < 0.12) {
-      const starAlpha = t > 0.82 ? 0.7 : t < 0.08 ? 0.7 * (1 - t / 0.08) : (t - 0.75) / 0.07 * 0.7
-      ctx.save(); ctx.globalAlpha = starAlpha
-      const starSeed = 42
-      for (let i = 0; i < 40; i++) {
-        const sx = ((Math.sin(i * 127.1 + starSeed) * 0.5 + 0.5)) * canvas.width
-        const sy = ((Math.sin(i * 311.7 + starSeed) * 0.5 + 0.5)) * canvas.height * 0.5
-        const sr = 0.8 + (i % 3) * 0.4
-        const twinkle = 0.5 + 0.5 * Math.sin(performance.now() / (800 + i * 200))
-        ctx.globalAlpha = starAlpha * twinkle
-        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill()
-      }
-      ctx.restore()
-    }
-    // Moon icon at night
-    if (t > 0.78 || t < 0.10) {
-      const moonAlpha = t > 0.82 ? 1 : t < 0.08 ? 1 - t / 0.08 : Math.min(1, (t - 0.78) / 0.04)
-      ctx.save(); ctx.globalAlpha = moonAlpha * 0.85
-      ctx.font = '20px serif'; ctx.textAlign = 'right'
-      ctx.fillText('🌙', canvas.width - 12, 36)
-      ctx.restore()
-    }
-    // Sun icon at day
-    if (t > 0.15 && t < 0.65) {
-      const sunAlpha = t < 0.22 ? (t - 0.15) / 0.07 : t > 0.58 ? 1 - (t - 0.58) / 0.07 : 1
-      ctx.save(); ctx.globalAlpha = sunAlpha * 0.8
-      ctx.font = '18px serif'; ctx.textAlign = 'right'
-      ctx.fillText('☀️', canvas.width - 12, 36)
-      ctx.restore()
-    }
-  }
-
-  // Quest flash
-  if (G._questFlash && G._questFlash.alpha > 0) {
-    ctx.save(); ctx.globalAlpha = G._questFlash.alpha
-    ctx.fillStyle = G._questFlash.color; ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.restore()
-    G._questFlash.alpha -= G._questFlash.alpha / G._questFlash.timer
-    G._questFlash.timer--
-  }
-
-  // Combat FX
+  // Combat FX (world space — positions come from gridToScreen so must be inside camera transform)
   for (let i = combatFX.length - 1; i >= 0; i--) {
     const fx = combatFX[i]
     fx.age++
@@ -760,4 +726,95 @@ export function render() {
     fx.y -= 0.4; fx.alpha -= 1 / fx.life
     if (fx.alpha <= 0) combatFX.splice(i, 1)
   }
+
+  ctx.restore() // end world space
+
+  // === SCREEN SPACE (no camera transform) ===
+
+  // Day/night overlay
+  {
+    const t = G.timeOfDay
+    let overlayColor = null
+    if (t < 0.08) {
+      // Deep night fading to dawn
+      const f = t / 0.08
+      overlayColor = `rgba(0,10,60,${0.45 * (1 - f) + 0.15 * f})`
+    } else if (t < 0.18) {
+      // Dawn: orange-red
+      const f = (t - 0.08) / 0.10
+      overlayColor = `rgba(200,80,20,${0.18 * (1 - f)})`
+    } else if (t < 0.62) {
+      // Day: no overlay
+      overlayColor = null
+    } else if (t < 0.72) {
+      // Dusk: orange-purple fading in
+      const f = (t - 0.62) / 0.10
+      overlayColor = `rgba(160,60,100,${0.22 * f})`
+    } else if (t < 0.82) {
+      // Dusk deepening to night
+      const f = (t - 0.72) / 0.10
+      overlayColor = `rgba(${Math.floor(160*(1-f))},${Math.floor(60*(1-f))},${Math.floor(100*(1-f)+60*f)},${0.22 + 0.23*f})`
+    } else {
+      // Night
+      overlayColor = 'rgba(0,10,60,0.45)'
+    }
+    if (overlayColor) {
+      ctx.save(); ctx.globalAlpha = 1
+      ctx.fillStyle = overlayColor
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.restore()
+    }
+    // Stars at night
+    if (t > 0.75 || t < 0.12) {
+      const starAlpha = t > 0.82 ? 0.7 : t < 0.08 ? 0.7 * (1 - t / 0.08) : (t - 0.75) / 0.07 * 0.7
+      ctx.save(); ctx.globalAlpha = starAlpha
+      const starSeed = 42
+      for (let i = 0; i < 40; i++) {
+        const sx = ((Math.sin(i * 127.1 + starSeed) * 0.5 + 0.5)) * canvas.width
+        const sy = ((Math.sin(i * 311.7 + starSeed) * 0.5 + 0.5)) * canvas.height * 0.5
+        const sr = 0.8 + (i % 3) * 0.4
+        const twinkle = 0.5 + 0.5 * Math.sin(performance.now() / (800 + i * 200))
+        ctx.globalAlpha = starAlpha * twinkle
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.restore()
+    }
+    // Moon icon at night
+    if (t > 0.78 || t < 0.10) {
+      const moonAlpha = t > 0.82 ? 1 : t < 0.08 ? 1 - t / 0.08 : Math.min(1, (t - 0.78) / 0.04)
+      ctx.save(); ctx.globalAlpha = moonAlpha * 0.85
+      ctx.font = '20px serif'; ctx.textAlign = 'right'
+      ctx.fillText('🌙', canvas.width - 12, 36)
+      ctx.restore()
+    }
+    // Sun icon at day
+    if (t > 0.15 && t < 0.65) {
+      const sunAlpha = t < 0.22 ? (t - 0.15) / 0.07 : t > 0.58 ? 1 - (t - 0.58) / 0.07 : 1
+      ctx.save(); ctx.globalAlpha = sunAlpha * 0.8
+      ctx.font = '18px serif'; ctx.textAlign = 'right'
+      ctx.fillText('☀️', canvas.width - 12, 36)
+      ctx.restore()
+    }
+  }
+
+  // Quest flash
+  if (G._questFlash && G._questFlash.alpha > 0) {
+    ctx.save(); ctx.globalAlpha = G._questFlash.alpha
+    ctx.fillStyle = G._questFlash.color; ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.restore()
+    G._questFlash.alpha -= G._questFlash.alpha / G._questFlash.timer
+    G._questFlash.timer--
+  }
+
+  // Zoom indicator (screen space)
+  if (Math.abs(camera.zoom - 1) > 0.02) {
+    ctx.save()
+    ctx.font = 'bold 12px monospace'; ctx.textAlign = 'right'
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(canvas.width - 58, canvas.height - 24, 50, 18)
+    ctx.fillStyle = '#fff'
+    ctx.fillText(`${camera.zoom.toFixed(2)}x`, canvas.width - 10, canvas.height - 10)
+    ctx.restore()
+  }
+
 }
+
