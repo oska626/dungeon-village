@@ -26,7 +26,7 @@ export function updateStars() {
 export function depositToTown(amount, src) {
   const real = amount * G.incomeBuff
   G.gold += real; G.townExp += real * 0.04; G.stats.totalGold += real
-  G.gold = Math.round(G.gold * 10) / 10
+  G.gold = Math.floor(G.gold)
   updateTopBar(); checkTownLevelUp()
 }
 
@@ -112,5 +112,5 @@ export function tickEconomy(dt) {
     G.maxAdventurers = 4 + G.townLevel * 2 + G.residents.filter(r => r.residentJob?.id === 'guildmaster').length * 3
     updateTopBar()
   }
-  G.gold = Math.round(G.gold * 10) / 10
+  G.gold = Math.floor(G.gold)
 }
