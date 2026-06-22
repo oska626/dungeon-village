@@ -3,6 +3,7 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen } from './render.js'
 import { addLog, updateQuestProgress } from './ui.js'
 import { applyResidentBonuses, createAdventurer } from './fsm.js'
+import { triggerRandomEvent } from './events.js'
 import { playTrack } from './audio.js'
 
 // Satisfaction system only activates at town level 2+
@@ -184,6 +185,8 @@ export function tickEconomy(dt) {
     }
     G.maxAdventurers = 4 + G.townLevel * 2 + G.residents.filter(r => r.residentJob?.id === 'guildmaster').length * 3
     updateTopBar()
+    // Random event every 2 days (odd days from day 3 onward)
+    if (G.day >= 3 && G.day % 2 === 1) triggerRandomEvent()
   }
   G.gold = Math.floor(G.gold)
 }

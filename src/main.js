@@ -16,6 +16,7 @@ import {
   initTutorialPanel,
 } from './ui.js'
 import { saveGame, loadGame, hasSave, deleteSave, getSaveInfo, applyDifficulty, DIFFICULTIES } from './save.js'
+import { triggerRandomEvent, chooseEvent } from './events.js'
 import { initAudio, playTrack, setMusicEnabled, setMusicVolume, stopAll } from './audio.js'
 
 // ── Options state ──
@@ -43,7 +44,7 @@ Object.assign(window, {
   openWallMenu, closeWallMenu, upgradeWall, repairWall,
   openForge, closeForge, forgeUpgrade,
   openSkillTree, closeSkillTree, confirmPromotion,
-  restartGame, manualSave, togglePause, toggleSatPanel,
+  restartGame, manualSave, togglePause, toggleSatPanel, chooseEvent, triggerRandomEvent,
 })
 
 // ── Canvas events ──

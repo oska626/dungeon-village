@@ -135,6 +135,23 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .sat-tier-badge{font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.08);}
 .sat-tier.active .sat-tier-badge{background:var(--gold-dim);color:var(--gold);}
 
+/* ── Event overlay ── */
+#event-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:700;align-items:center;justify-content:center;}
+#event-overlay.show{display:flex;}
+#event-card{background:linear-gradient(160deg,#0d1b2a,#1a2a3a);border:2px solid var(--gold);border-radius:12px;padding:28px 32px;width:420px;max-width:92vw;box-shadow:0 0 40px rgba(240,165,0,.3);animation:eventPop .25s ease;}
+@keyframes eventPop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.event-cat{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--gold);text-align:center;margin-bottom:14px;letter-spacing:1px;}
+.event-timer-wrap{position:relative;height:10px;background:rgba(255,255,255,.1);border-radius:5px;margin-bottom:20px;overflow:hidden;}
+.event-timer-fill{height:100%;border-radius:5px;transition:width 1s linear,background .3s;width:100%;}
+.event-timer-label{position:absolute;right:6px;top:-1px;font-size:10px;color:#fff;font-family:'Press Start 2P',monospace;}
+.event-q{font-size:20px;font-weight:700;text-align:center;color:#fff;margin-bottom:20px;line-height:1.4;}
+.event-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.event-opt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#fff;font-family:'Noto Sans TC',sans-serif;font-size:14px;font-weight:700;padding:11px 8px;border-radius:7px;cursor:pointer;transition:all .15s;}
+.event-opt:hover:not(:disabled){background:rgba(240,165,0,.2);border-color:var(--gold);box-shadow:0 0 10px rgba(240,165,0,.3);}
+.event-opt:disabled{opacity:.5;cursor:default;}
+.event-hint{font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:8px;}
+.event-result{font-size:16px;font-weight:700;text-align:center;margin-top:8px;display:none;}
+
 #town-level-stars{display:flex;gap:1px;align-items:center;}
 .star{color:var(--gold-dim);font-size:16px;transition:color .3s;}
 .star.lit{color:var(--gold);text-shadow:0 0 6px var(--gold);}
