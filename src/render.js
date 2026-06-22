@@ -521,6 +521,115 @@ function drawMonster(m) {
   ctx.fillText((m.isSiege ? '⚔ ' : '') + m.name, x, y - 26)
 }
 
+// ── Resource node renderers ──
+function drawResourceNode(c, type, x, y, stockPct) {
+  const alpha = 0.5 + stockPct * 0.5  // fade when low stock
+  c.save(); c.globalAlpha = alpha
+
+  if (type === 'wood') {
+    // Ground tile
+    drawTileTo(c, x, y + 14, '#3a5a2a', '#2a4a1a', '#2a4a1a', 4)
+    const sw = 20, sh = 9, stH = 12
+    // Stump sides
+    c.fillStyle = '#6b3a18'
+    c.fillRect(x - sw / 2, y + 4, sw, stH)
+    // Dark right edge for depth
+    c.fillStyle = '#4a2808'
+    c.fillRect(x + sw / 2 - 4, y + 4, 4, stH)
+    // Bottom ellipse
+    c.fillStyle = '#7a4a20'
+    c.beginPath(); c.ellipse(x, y + 4 + stH, sw / 2, sh / 2, 0, 0, Math.PI * 2); c.fill()
+    // Top face
+    c.fillStyle = '#c8882a'
+    c.beginPath(); c.ellipse(x, y + 4, sw / 2, sh / 2, 0, 0, Math.PI * 2); c.fill()
+    // Growth rings
+    c.strokeStyle = '#a06010'; c.lineWidth = 0.7
+    c.beginPath(); c.ellipse(x, y + 4, sw / 2 - 4, sh / 2 - 2, 0, 0, Math.PI * 2); c.stroke()
+    c.beginPath(); c.ellipse(x, y + 4, sw / 2 - 8, sh / 2 - 4, 0, 0, Math.PI * 2); c.stroke()
+    // Bark texture lines on side
+    c.strokeStyle = '#4a2808'; c.lineWidth = 0.6
+    ;[-6, 0, 6].forEach(ox => {
+      c.beginPath(); c.moveTo(x + ox, y + 5); c.lineTo(x + ox, y + 4 + stH - 1); c.stroke()
+    })
+    // Small sprout on top-left
+    c.strokeStyle = '#44aa22'; c.lineWidth = 1.5; c.lineCap = 'round'
+    c.beginPath(); c.moveTo(x - 5, y + 4); c.quadraticCurveTo(x - 9, y - 2, x - 7, y - 7); c.stroke()
+    c.fillStyle = '#55cc33'
+    c.beginPath(); c.arc(x - 7, y - 8, 3, 0, Math.PI * 2); c.fill()
+
+  } else if (type === 'stone') {
+    drawTileTo(c, x, y + 14, '#3a5a2a', '#2a4a1a', '#2a4a1a', 4)
+    const rocks = [{ rx: x - 7, ry: y + 12, w: 14, h: 9 }, { rx: x + 7, ry: y + 14, w: 11, h: 7 }, { rx: x, ry: y + 5, w: 17, h: 11 }]
+    rocks.forEach(r => {
+      c.fillStyle = '#555566'
+      c.beginPath(); c.ellipse(r.rx, r.ry, r.w / 2, r.h / 2, -0.2, 0, Math.PI * 2); c.fill()
+      c.fillStyle = '#777788'
+      c.beginPath(); c.ellipse(r.rx - 1, r.ry - 1, r.w / 2 - 1, r.h / 2 - 1, -0.2, 0, Math.PI * 2); c.fill()
+      c.fillStyle = 'rgba(200,200,220,0.28)'
+      c.beginPath(); c.ellipse(r.rx - 2, r.ry - 2, r.w / 4, r.h / 4, -0.4, 0, Math.PI * 2); c.fill()
+    })
+
+  } else if (type === 'iron') {
+    drawTileTo(c, x, y + 14, '#3a5a2a', '#2a4a1a', '#2a4a1a', 4)
+    c.fillStyle = '#334455'
+    c.beginPath()
+    c.moveTo(x - 12, y + 12); c.lineTo(x - 4, y + 4); c.lineTo(x + 8, y + 5)
+    c.lineTo(x + 14, y + 12); c.lineTo(x + 6, y + 19); c.lineTo(x - 8, y + 19)
+    c.closePath(); c.fill()
+    c.fillStyle = '#556677'
+    c.beginPath()
+    c.moveTo(x - 10, y + 12); c.lineTo(x - 3, y + 5); c.lineTo(x + 6, y + 6)
+    c.lineTo(x + 11, y + 12); c.lineTo(x + 4, y + 17); c.lineTo(x - 6, y + 17)
+    c.closePath(); c.fill()
+    ;[[x - 5, y + 7, x + 2, y + 10], [x - 3, y + 9, x + 4, y + 13], [x + 2, y + 6, x + 8, y + 9]].forEach(([x1, y1, x2, y2]) => {
+      c.strokeStyle = 'rgba(150,180,220,0.6)'; c.lineWidth = 1.2
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke()
+    })
+
+  } else if (type === 'water') {
+    drawTileTo(c, x, y + 10, '#3a5a2a', '#2a4a1a', '#2a4a1a', 4)
+    // Water surface clipped to inner diamond
+    c.save()
+    c.beginPath()
+    c.moveTo(x, y + 12); c.lineTo(x + ISO_W / 2 - 3, y + ISO_H / 2 + 12)
+    c.lineTo(x, y + ISO_H + 10); c.lineTo(x - ISO_W / 2 + 3, y + ISO_H / 2 + 12)
+    c.closePath(); c.clip()
+    const g = c.createLinearGradient(x - 20, y + 12, x + 20, y + 30)
+    g.addColorStop(0, '#1a5588'); g.addColorStop(0.5, '#2277bb'); g.addColorStop(1, '#1a4466')
+    c.fillStyle = g; c.fill()
+    const t = (performance.now() / 1000)
+    ;[0, 1, 2].forEach(i => {
+      const wave = (t * 0.8 + i * 0.38) % 1
+      c.beginPath(); c.ellipse(x + (i - 1) * 5, y + 20, 5 + wave * 8, 2 + wave * 3, 0, 0, Math.PI * 2)
+      c.strokeStyle = `rgba(100,180,255,${0.55 * (1 - wave)})`; c.lineWidth = 0.8; c.stroke()
+    })
+    c.restore()
+
+  } else if (type === 'crystal') {
+    drawTileTo(c, x, y + 14, '#3a5a2a', '#2a4a1a', '#2a4a1a', 4)
+    const crystals = [{ ox: -8, oy: 10, w: 7, h: 20, a: -0.15, col: '#7744cc' }, { ox: 2, oy: 4, w: 9, h: 26, a: 0.05, col: '#9955ee' }, { ox: 10, oy: 12, w: 6, h: 18, a: 0.2, col: '#6633bb' }]
+    crystals.forEach(cr => {
+      c.save(); c.translate(x + cr.ox, y + cr.oy); c.rotate(cr.a)
+      c.fillStyle = cr.col
+      c.beginPath(); c.moveTo(0, -cr.h / 2); c.lineTo(cr.w / 2, -cr.h / 4); c.lineTo(cr.w / 2, cr.h / 3); c.lineTo(0, cr.h / 2); c.lineTo(-cr.w / 2, cr.h / 3); c.lineTo(-cr.w / 2, -cr.h / 4); c.closePath(); c.fill()
+      c.fillStyle = 'rgba(200,160,255,0.38)'
+      c.beginPath(); c.moveTo(0, -cr.h / 2); c.lineTo(cr.w / 2, -cr.h / 4); c.lineTo(cr.w / 2, cr.h / 3); c.lineTo(0, cr.h / 4); c.closePath(); c.fill()
+      c.restore()
+    })
+  }
+
+  c.restore()
+}
+
+// helper: draw iso tile to a specific context (for resource nodes on main ctx)
+function drawTileTo(c, x, y, top, left, right, h = 4) {
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x + ISO_W / 2, y + ISO_H / 2); c.lineTo(x, y + ISO_H); c.lineTo(x - ISO_W / 2, y + ISO_H / 2); c.closePath()
+  c.fillStyle = top; c.fill()
+  c.strokeStyle = 'rgba(0,0,0,0.2)'; c.lineWidth = 0.5; c.stroke()
+  c.beginPath(); c.moveTo(x - ISO_W / 2, y + ISO_H / 2); c.lineTo(x, y + ISO_H); c.lineTo(x, y + ISO_H + h); c.lineTo(x - ISO_W / 2, y + ISO_H / 2 + h); c.closePath(); c.fillStyle = left; c.fill()
+  c.beginPath(); c.moveTo(x, y + ISO_H); c.lineTo(x + ISO_W / 2, y + ISO_H / 2); c.lineTo(x + ISO_W / 2, y + ISO_H / 2 + h); c.lineTo(x, y + ISO_H + h); c.closePath(); c.fillStyle = right; c.fill()
+}
+
 // ── Main render ──
 export function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -560,16 +669,12 @@ export function render() {
   G.resourceNodes.forEach(n => {
     if (n.stock <= 0) return
     const { x, y } = gridToScreen(n.gx, n.gy)
-    const rdata = GAME_DATA.resources.find(r => r.id === n.type)
-    ctx.save(); ctx.globalAlpha = 0.85
-    const nodeColors = { wood:'#6b3a1a', stone:'#666677', iron:'#445566', water:'#1a6688', crystal:'#5533aa' }
-    drawTile(n.gx, n.gy, nodeColors[n.type] || '#555555', 'rgba(0,0,0,0.4)')
-    ctx.restore()
-    ctx.font = '11px serif'; ctx.textAlign = 'center'
-    ctx.fillText(rdata ? rdata.emoji : '❓', x, y + ISO_H / 2)
     const stockPct = n.stock / n.max
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - 9, y - 4, 18, 3)
-    ctx.fillStyle = rdata ? rdata.color : '#888'; ctx.fillRect(x - 9, y - 4, 18 * stockPct, 3)
+    const rdata = GAME_DATA.resources.find(r => r.id === n.type)
+    drawResourceNode(ctx, n.type, x, y, stockPct)
+    // Stock bar
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - 10, y - 6, 20, 3)
+    ctx.fillStyle = rdata ? rdata.color : '#888'; ctx.fillRect(x - 10, y - 6, 20 * stockPct, 3)
   })
 
   // Buildings (offscreen cache)
