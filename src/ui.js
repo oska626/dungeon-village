@@ -151,15 +151,20 @@ export function buildBuildPanel() {
     const div = document.createElement('div')
     div.className = `build-card${afford && !locked ? '' : ' cant-afford'}`
     div.innerHTML = `
-      <div class="bc-head"><span class="bc-name">${b.emoji} ${b.name}</span><span class="bc-cost">💰${b.cost}</span></div>
-      <div class="bc-desc">${b.desc}</div>
-      <div class="bc-stats">
-        <span class="bc-stat income">+${b.baseIncome}/day</span>
-        <span class="bc-stat pop">⭐+${b.popularity}</span>
-        <span class="bc-stat buff">↑${b.buffStat}</span>
-      </div>
-      ${locked ? `<div class="bc-locked">🔒 需要人氣 ${b.unlockPop}</div>` : ''}
-      ${b.synergyWith ? `<div style="font-size:17px;color:#9966ff;margin-top:2px;">⚡ 連鎖: ${b.synergyWith.map(id => GAME_DATA.buildings.find(x => x.id === id)?.emoji || '?').join(' ')}</div>` : ''}`
+      <div class="bc-body">
+        <div class="bc-img-wrap"><img class="bc-img" src="/sprites/${b.id}.png" alt="${b.name}" loading="lazy"></div>
+        <div class="bc-info">
+          <div class="bc-head"><span class="bc-name">${b.name}</span><span class="bc-cost">💰${b.cost}</span></div>
+          <div class="bc-desc">${b.desc}</div>
+          <div class="bc-stats">
+            <span class="bc-stat income">+${b.baseIncome}/day</span>
+            <span class="bc-stat pop">⭐+${b.popularity}</span>
+            <span class="bc-stat buff">↑${b.buffStat}</span>
+          </div>
+          ${locked ? `<div class="bc-locked">🔒 需要人氣 ${b.unlockPop}</div>` : ''}
+          ${b.synergyWith ? `<div style="font-size:11px;color:#9966ff;margin-top:2px;">⚡ ${b.synergyWith.map(id => GAME_DATA.buildings.find(x => x.id === id)?.emoji || '?').join(' ')}</div>` : ''}
+        </div>
+      </div>`
     div.onclick = () => { if (afford && !locked) selectBuilding(b) }
     c.appendChild(div)
   })
