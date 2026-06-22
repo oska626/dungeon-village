@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { initState } from './state.js'
 import { GAME_DATA } from './data.js'
 import { canvas, resize, screenToGrid, rawToLogical, render, wasDragging } from './render.js'
-import { updateTopBar, updateResourceDisplay, updateStars, tickEconomy, closeLevelUp } from './economy.js'
+import { updateTopBar, updateResourceDisplay, updateStars, tickEconomy, closeLevelUp, renderSatPanel } from './economy.js'
 import { updateAdventurer, recalcSynergies, applyResidentBonuses } from './fsm.js'
 import { tickSiege, tickResourceRespawn, restartGame as _restartGame, openWallMenu, closeWallMenu, upgradeWall, repairWall, openForge, closeForge, forgeUpgrade, repairBuilding } from './systems.js'
 import {
@@ -24,6 +24,17 @@ let fxEnabled = true
 export { fxEnabled }
 
 // ── Window exports for HTML onclick ──
+function toggleSatPanel(e) {
+  if (e) e.stopPropagation()
+  const panel = document.getElementById('sat-panel')
+  panel.classList.toggle('hidden')
+  renderSatPanel()
+}
+// Close sat panel when clicking elsewhere
+document.addEventListener('click', e => {
+  if (!e.target.closest('#sat-pill')) document.getElementById('sat-panel')?.classList.add('hidden')
+})
+
 Object.assign(window, {
   cancelPlacing, upgradeBuilding, refineBuilding, repairBuilding, instantCompleteBuilding,
   claimQuest, switchLeftTab, switchRightTab, setSpeed,
@@ -32,7 +43,7 @@ Object.assign(window, {
   openWallMenu, closeWallMenu, upgradeWall, repairWall,
   openForge, closeForge, forgeUpgrade,
   openSkillTree, closeSkillTree, confirmPromotion,
-  restartGame, manualSave, togglePause,
+  restartGame, manualSave, togglePause, toggleSatPanel,
 })
 
 // ── Canvas events ──
@@ -155,6 +166,7 @@ function restartGame() {
     resourceNodes:[], globalResources:{ wood:0, stone:0, iron:0, water:0, crystal:0 },
     siege:{ active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
     nightSiege:{ timer:0, nextIn:90 },
+    satisfactionBonuses:[],
     gameOver:false, bounty:{ active:false, elite:null },
     _lastPanelGold:-1, _buildPanelDirty:true, _lastAdvKey:'', _lastResCount:-1,
     _lastQuestKey:'', _usedNames:null, _questFlash:null,

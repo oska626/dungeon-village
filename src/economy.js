@@ -5,6 +5,30 @@ import { addLog, updateQuestProgress } from './ui.js'
 import { applyResidentBonuses, createAdventurer } from './fsm.js'
 import { playTrack } from './audio.js'
 
+// Returns how many satisfaction tiers are active (0–3), and whether a specific effect is active
+export function satTierCount() { return Math.min(3, Math.floor(G.satisfaction / 30)) }
+export function hasSatEffect(id) {
+  const tier = satTierCount()
+  return G.satisfactionBonuses.slice(0, tier).includes(id)
+}
+
+export function renderSatPanel() {
+  const panel = document.getElementById('sat-panel')
+  if (!panel || panel.classList.contains('hidden')) return
+  const tier = satTierCount()
+  panel.innerHTML = '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">😊 滿足度加成 (每30點)</div>' +
+    G.satisfactionBonuses.map((id, i) => {
+      const fx = GAME_DATA.satisfactionEffects.find(e => e.id === id)
+      const active = i < tier
+      const threshold = (i + 1) * 30
+      return `<div class="sat-tier ${active ? 'active' : 'inactive'}">
+        <span class="sat-tier-badge">${threshold}+</span>
+        <span>${fx.emoji} ${fx.name}</span>
+        ${active ? '<span style="color:var(--green-hi);margin-left:auto;">✓</span>' : ''}
+      </div>`
+    }).join('')
+}
+
 export function updateTopBar() {
   document.getElementById('gold-val').textContent = Math.floor(G.gold)
   document.getElementById('pop-val').textContent = Math.floor(G.popularity)
@@ -80,7 +104,8 @@ export function tickEconomy(dt) {
     if (b.constructing) return  // no income while building
     const d = GAME_DATA.buildings.find(x => x.id === b.id); if (!d) return
     const innkeeperBonus = G.residents.filter(r => r.residentJob?.id === 'innkeeper' && b.id === 'inn').length * 0.3
-    const income = d.baseIncome * (1 + (b.level - 1) * 0.5) * (1 + innkeeperBonus) * G.incomeBuff * dt * G.speed * 0.1
+    const incomeBonus = hasSatEffect('income') ? 1.15 : 1
+    const income = d.baseIncome * (1 + (b.level - 1) * 0.5) * (1 + innkeeperBonus) * G.incomeBuff * incomeBonus * dt * G.speed * 0.1
     G.gold += income; G.townIncome += income; G.stats.totalGold += income
     if (b.refined) {
       if (b.id === 'cake_shop') G.satisfaction = Math.min(100, G.satisfaction + 3 * dt * G.speed / G.dayLength)
@@ -91,7 +116,13 @@ export function tickEconomy(dt) {
   })
   G.popularity += G.buildings.length * 0.002 * dt * G.speed
   G.popularity = Math.min(200, G.popularity)
+  const prevSatTier = satTierCount()
   G.satisfaction = Math.min(100, G.satisfaction + G.satisfactionBuff * 0.0004 * dt * G.speed)
+  const newSatTier = satTierCount()
+  if (newSatTier > prevSatTier && newSatTier <= 3) {
+    const fx = GAME_DATA.satisfactionEffects.find(e => e.id === G.satisfactionBonuses[newSatTier - 1])
+    if (fx) addLog(`😊 滿足度達到${newSatTier * 30}！解鎖加成：${fx.emoji} ${fx.name}`, 'level')
+  }
 
   if (G.dayTick >= G.dayLength / G.speed) {
     G.dayTick = 0; G.day++
@@ -101,7 +132,7 @@ export function tickEconomy(dt) {
     if (G.buildings.find(b => b.id === 'weapon_shop' && b.refined))
       G.adventurers.forEach(a => { a.atk += 1 })
     updateQuestProgress()
-    if (G.adventurers.length < G.maxAdventurers && Math.random() < 0.25 + G.popularity / 300) {
+    if (G.adventurers.length < G.maxAdventurers && Math.random() < 0.25 + G.popularity / 300 + (hasSatEffect('recruit') ? 0.25 : 0)) {
       const adv = createAdventurer()
       const sp = gridToScreen(0, 7); adv.screenX = sp.x - 10; adv.screenY = sp.y
       G.adventurers.push(adv)

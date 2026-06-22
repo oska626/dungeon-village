@@ -205,4 +205,13 @@ export const GAME_DATA = {
       { name:"火龍巢穴", diff:"boss",   monsters:["dragon"],         hpMult:4.0, atkMult:2.5, goldReward:360, expReward:560, itemReward:"龍王武器" },
     ]},
   ],
+
+  satisfactionEffects: [
+    { id:'hp_regen',   name:'HP回復 ×1.5', emoji:'💚', desc:'冒險者休息時HP回復速度提升50%' },
+    { id:'mp_regen',   name:'MP回復 ×1.5', emoji:'💙', desc:'冒險者MP回復速度提升50%' },
+    { id:'resource',   name:'資源+50%機率', emoji:'🌿', desc:'採集時50%機率額外獲得一份資源' },
+    { id:'recruit',    name:'招募機率+25%', emoji:'🧙', desc:'每天吸引新冒險者的機率提升25%' },
+    { id:'income',     name:'收入+15%',     emoji:'💰', desc:'所有建築日收入提升15%' },
+    { id:'combat_dmg', name:'傷害+10%',     emoji:'⚔️', desc:'冒險者戰鬥傷害提升10%' },
+  ],
 }

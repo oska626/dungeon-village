@@ -3,7 +3,7 @@ import { GAME_DATA } from './data.js'
 import { gridToScreen, addCombatFX, spawnParticles } from './render.js'
 // addLog, updateQuestProgress, updateTopBar imported lazily to avoid circular init issues
 import { addLog, updateQuestProgress } from './ui.js'
-import { depositToTown, updateTopBar, updateResourceDisplay, checkTownLevelUp } from './economy.js'
+import { depositToTown, updateTopBar, updateResourceDisplay, checkTownLevelUp, hasSatEffect } from './economy.js'
 import { autoForgeIfPossible } from './systems.js'
 
 export function setState(adv, s) { adv.state = s; adv.stateTimer = 0 }
@@ -307,9 +307,9 @@ export function updateAdventurer(adv, dt) {
     case 'Resting': {
       const innCount = G.buildings.filter(b => b.id === 'inn').length
       const priestBonus = G.residents.filter(r => r.residentJob?.id === 'priest').length * 0.4
-      const healRate = (7 + innCount * 5) * (1 + priestBonus) * dt * G.speed
+      const healRate = (7 + innCount * 5) * (1 + priestBonus) * (hasSatEffect('hp_regen') ? 1.5 : 1) * dt * G.speed
       adv.hp = Math.min(adv.maxHp, adv.hp + healRate)
-      adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * 0.8)
+      adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * 0.8 * (hasSatEffect('mp_regen') ? 1.5 : 1))
       if (adv.stateTimer > 0.4 / G.speed) {
         if (G.buildings.find(b => b.id === 'inn') && adv.gold >= 12) {
           adv.gold -= 12; depositToTown(8, 'Inn')
@@ -328,8 +328,9 @@ export function updateAdventurer(adv, dt) {
         if (rn.stock > 0) {
           rn.stock = Math.max(0, rn.stock - 1)
           const rdata = GAME_DATA.resources.find(r => r.id === rn.type)
-          G.globalResources[rn.type] = (G.globalResources[rn.type] || 0) + 1
-          addCombatFX(adv.screenX, adv.screenY - 20, '+1' + (rdata ? rdata.emoji : '?'), rdata ? rdata.color : '#888', 'text')
+          const bonusHarvest = hasSatEffect('resource') && Math.random() < 0.5 ? 1 : 0
+          G.globalResources[rn.type] = (G.globalResources[rn.type] || 0) + 1 + bonusHarvest
+          addCombatFX(adv.screenX, adv.screenY - 20, '+' + (1 + bonusHarvest) + (rdata ? rdata.emoji : '?'), rdata ? rdata.color : '#888', 'text')
           addLog(`${adv.name} 採集了 ${rdata ? rdata.emoji : ''}${rdata ? rdata.name : rn.type}！`, 'earn')
           updateResourceDisplay()
         }
@@ -405,10 +406,11 @@ export function updateAdventurer(adv, dt) {
         const useBaseSkill = !useActiveSkill && cls && adv.mp >= cls.skill.mpCost && Math.random() < 0.28
         const useSkill = useActiveSkill || useBaseSkill
         let dmgToMon
+        const combatDmgMult = hasSatEffect('combat_dmg') ? 1.1 : 1
 
         if (useActiveSkill) {
           const def = activeSkill.ignoreDef ? 0 : m.def
-          dmgToMon = Math.max(1, Math.floor(adv.atk * activeSkill.dmgMult) - def + Math.floor(Math.random() * 8))
+          dmgToMon = Math.max(1, Math.floor(adv.atk * activeSkill.dmgMult * combatDmgMult) - def + Math.floor(Math.random() * 8))
           adv.skillCooldowns[activeSkill.id] = activeSkill.cd
           adv._attackPose = 1
           const stype = activeSkill.skillType || atype
@@ -427,7 +429,7 @@ export function updateAdventurer(adv, dt) {
           if (activeSkill.healPct)    { const heal = Math.floor(dmgToMon * activeSkill.healPct); adv.hp = Math.min(adv.maxHp, adv.hp + heal) }
           if (activeSkill.selfDmgPct) { adv.hp = Math.max(1, adv.hp - Math.floor(adv.maxHp * activeSkill.selfDmgPct)) }
         } else if (useBaseSkill) {
-          dmgToMon = Math.max(1, Math.floor(adv.atk * cls.skill.dmgMult) - m.def + Math.floor(Math.random() * 6))
+          dmgToMon = Math.max(1, Math.floor(adv.atk * cls.skill.dmgMult * combatDmgMult) - m.def + Math.floor(Math.random() * 6))
           adv.mp -= cls.skill.mpCost; adv._attackPose = 1
           const stype = cls.skill.skillType || atype
           if (stype === 'melee') {
@@ -447,7 +449,7 @@ export function updateAdventurer(adv, dt) {
             }, 400)
           }
         } else {
-          dmgToMon = Math.max(1, adv.atk - m.def + Math.floor(Math.random() * 5))
+          dmgToMon = Math.max(1, Math.floor(adv.atk * combatDmgMult) - m.def + Math.floor(Math.random() * 5))
           adv._attackPose = 0.6
           if (atype === 'melee') {
             addCombatFX(mx, my - 8, '', '#ffaa44', 'slash')

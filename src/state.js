@@ -27,6 +27,7 @@ export const G = {
   resourceNodes: [],
   globalResources: { wood:0, stone:0, iron:0, water:0, crystal:0 },
   siege: { active:false, timer:0, interval:180, siegeMonsters:[], warningShown:false, lastBossLevel:0 },
+  satisfactionBonuses: [],  // 3 randomly picked effect ids per game
   gameOver: false,
   bounty: { active: false, elite: null },
   // UI dirty flags
@@ -73,6 +74,14 @@ export function initState() {
 
   // Init quests
   GAME_DATA.quests.forEach(q => { G.quests[q.id] = { progress: 0, claimed: false } })
+
+  // Randomly assign 3 satisfaction bonus effects for this game
+  const pool = [...GAME_DATA.satisfactionEffects]
+  G.satisfactionBonuses = []
+  for (let i = 0; i < 3 && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length)
+    G.satisfactionBonuses.push(pool.splice(idx, 1)[0].id)
+  }
 
   // Init resource nodes
   GAME_DATA.resourceNodes.forEach(n => {

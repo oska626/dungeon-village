@@ -126,6 +126,15 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 .btn-action.orange{background:linear-gradient(180deg,var(--orange),#7a3000);border-color:var(--orange-hi);}
 .btn-action.orange:hover{background:linear-gradient(180deg,var(--orange-hi),var(--orange));}
 
+.sat-panel{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:8px 10px;min-width:200px;z-index:300;font-size:12px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.6);}
+.sat-panel.hidden{display:none;}
+.sat-tier{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.sat-tier:last-child{border-bottom:none;}
+.sat-tier.active{color:#fff;}
+.sat-tier.inactive{color:var(--text-dim);}
+.sat-tier-badge{font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.08);}
+.sat-tier.active .sat-tier-badge{background:var(--gold-dim);color:var(--gold);}
+
 #town-level-stars{display:flex;gap:1px;align-items:center;}
 .star{color:var(--gold-dim);font-size:16px;transition:color .3s;}
 .star.lit{color:var(--gold);text-shadow:0 0 6px var(--gold);}

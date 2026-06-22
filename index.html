@@ -13,7 +13,10 @@
   <span id="game-title">🏰 山寨物語</span>
   <div class="stat-pill"><span class="icon">💰</span><span class="lbl">金幣</span><span class="val" id="gold-val">1500</span></div>
   <div class="stat-pill"><span class="icon">⭐</span><span class="lbl">人氣</span><span class="val" id="pop-val">0</span></div>
-  <div class="stat-pill"><span class="icon">😊</span><span class="lbl">滿足</span><span class="val" id="sat-val">0</span></div>
+  <div class="stat-pill sat-pill" id="sat-pill" onclick="toggleSatPanel(event)" style="cursor:pointer;position:relative;">
+    <span class="icon">😊</span><span class="lbl">滿足</span><span class="val" id="sat-val">0</span>
+    <div id="sat-panel" class="sat-panel hidden"></div>
+  </div>
   <div class="stat-pill"><span class="icon">🧙</span><span class="lbl">冒險者</span><span class="val"><span id="adv-count-val">0</span>/<span id="adv-max-val">4</span></span></div>
   <div class="stat-pill"><span class="icon">🏠</span><span class="lbl">居民</span><span class="val" id="res-count-val">0</span></div>
   <div id="town-level-stars">
