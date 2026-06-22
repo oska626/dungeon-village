@@ -72,20 +72,57 @@ export function shadeColor(c, amt) {
 export let mouseGrid = { x: -1, y: -1 }
 export let mouseScreen = { x: 0, y: 0 }
 
-let _panning = false, _panLastX = 0, _panLastY = 0
+// Left-drag pan state
+let _dragStart = null, _isDragging = false
+export let wasDragging = false  // read by click handler in main.js
+const DRAG_THRESHOLD = 5
+
+let _panLastX = 0, _panLastY = 0
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0) {
+    _dragStart = { x: e.clientX, y: e.clientY }
+    _isDragging = false
+    wasDragging = false
+  }
+})
 
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect()
   const raw = { x: e.clientX - r.left, y: e.clientY - r.top }
   mouseScreen = rawToLogical(raw.x, raw.y)
   mouseGrid = screenToGrid(mouseScreen.x, mouseScreen.y)
-  // Middle-button drag → pan
+
+  // Left-button drag → pan (with threshold to distinguish from click)
+  if (e.buttons === 1 && _dragStart) {
+    const dx = e.clientX - _dragStart.x, dy = e.clientY - _dragStart.y
+    if (!_isDragging && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) _isDragging = true
+    if (_isDragging) {
+      camera.panX += e.movementX
+      camera.panY += e.movementY
+      G.buildingCacheDirty = true
+      wasDragging = true
+      canvas.style.cursor = 'grabbing'
+    }
+  } else if (e.buttons === 0) {
+    canvas.style.cursor = 'grab'
+  }
+
+  // Middle-button drag → also pan
   if (e.buttons === 4) {
     camera.panX += e.clientX - _panLastX
     camera.panY += e.clientY - _panLastY
     G.buildingCacheDirty = true
   }
   _panLastX = e.clientX; _panLastY = e.clientY
+})
+
+canvas.addEventListener('mouseup', e => {
+  if (e.button === 0) {
+    _dragStart = null
+    if (!_isDragging) canvas.style.cursor = 'grab'
+    _isDragging = false
+  }
 })
 
 canvas.addEventListener('wheel', e => {

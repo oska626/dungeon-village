@@ -1,7 +1,7 @@
 import { G } from './state.js'
 import { initState } from './state.js'
 import { GAME_DATA } from './data.js'
-import { canvas, resize, screenToGrid, rawToLogical, render } from './render.js'
+import { canvas, resize, screenToGrid, rawToLogical, render, wasDragging } from './render.js'
 import { updateTopBar, updateResourceDisplay, updateStars, tickEconomy, closeLevelUp } from './economy.js'
 import { updateAdventurer, recalcSynergies, applyResidentBonuses } from './fsm.js'
 import { tickSiege, tickResourceRespawn, restartGame as _restartGame, openWallMenu, closeWallMenu, upgradeWall, repairWall, openForge, closeForge, forgeUpgrade, repairBuilding } from './systems.js'
@@ -37,6 +37,7 @@ Object.assign(window, {
 
 // ── Canvas events ──
 canvas.addEventListener('click', e => {
+  if (wasDragging) return  // left-drag pan — not a click
   const rect = canvas.getBoundingClientRect()
   const raw = rawToLogical(e.clientX - rect.left, e.clientY - rect.top)
   const { x: gx, y: gy } = screenToGrid(raw.x, raw.y)

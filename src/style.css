@@ -24,7 +24,7 @@ body{background:var(--bg-deep);color:var(--parchment);font-family:'Noto Sans TC'
 
 #main{display:flex;flex:1;overflow:hidden;}
 #world-wrap{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#1a3a2a,#0d1a0d);}
-#gameCanvas{position:absolute;top:0;left:0;cursor:crosshair;}
+#gameCanvas{position:absolute;top:0;left:0;cursor:grab;}
 
 #left-panel{width:240px;background:var(--bg-panel);border-right:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
 #right-panel{width:270px;background:var(--bg-panel);border-left:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
