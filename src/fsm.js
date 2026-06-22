@@ -307,17 +307,28 @@ export function updateAdventurer(adv, dt) {
     }
 
     case 'Resting': {
+      // If knocked out, snap to home position and stay invisible until 30% HP
+      if (adv.knocked) {
+        const home = G.buildings.find(b => b.id === 'house' && b.gx === adv.homeGX && b.gy === adv.homeGY)
+        if (home) { const sp = gridToScreen(home.gx, home.gy); adv.screenX = sp.x; adv.screenY = sp.y }
+      }
       const innCount = G.buildings.filter(b => b.id === 'inn').length
       const priestBonus = G.residents.filter(r => r.residentJob?.id === 'priest').length * 0.4
       const healRate = (7 + innCount * 5) * (1 + priestBonus) * (hasSatEffect('hp_regen') ? 1.5 : 1) * (hasNegEffect('slow_heal') ? 0.67 : 1) * dt * G.speed
       adv.hp = Math.min(adv.maxHp, adv.hp + healRate)
       adv.mp = Math.min(adv.mpMax, adv.mp + dt * G.speed * 0.8 * (hasSatEffect('mp_regen') ? 1.5 : 1))
-      if (adv.stateTimer > 0.4 / G.speed) {
-        if (G.buildings.find(b => b.id === 'inn') && adv.gold >= 12) {
-          adv.gold -= 12; depositToTown(8, 'Inn')
-        }
+      if (adv.knocked && adv.hp >= adv.maxHp * 0.3) {
+        adv.knocked = false
+        addLog(`💪 ${adv.name} 回復過來了！重返戰場！`, 'level')
       }
-      if (adv.hp >= adv.maxHp * 0.88 || adv.stateTimer > 7 / G.speed) setState(adv, 'Idle')
+      if (!adv.knocked) {
+        if (adv.stateTimer > 0.4 / G.speed) {
+          if (G.buildings.find(b => b.id === 'inn') && adv.gold >= 12) {
+            adv.gold -= 12; depositToTown(8, 'Inn')
+          }
+        }
+        if (adv.hp >= adv.maxHp * 0.88 || adv.stateTimer > 7 / G.speed) setState(adv, 'Idle')
+      }
       break
     }
 
@@ -514,9 +525,10 @@ export function updateAdventurer(adv, dt) {
               if (m.hp <= 0 && !m.dead) { m.dead = true; setTimeout(() => { const i = G.monsters.indexOf(m); if (i > -1) G.monsters.splice(i, 1) }, 1200) }
             }
             if (adv.hp <= 0) {
-              adv.hp = 1; adv._attackPose = 0; adv.restTimer = 10
-              addLog(`💔 ${adv.name} 倒下了！需要回家休息 10 秒...`, 'combat')
-              adv.combatTarget = null; setState(adv, 'EnterTown')
+              adv.hp = 0; adv._attackPose = 0; adv.knocked = true
+              adv.combatTarget = null
+              addLog(`💔 ${adv.name} 倒下了！回家休養中...`, 'combat')
+              setState(adv, 'Resting')
             }
           }
         }

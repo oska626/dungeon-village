@@ -737,7 +737,7 @@ export function render() {
     ctx.restore()
   })
 
-  G.adventurers.forEach(a => drawAdventurer(a))
+  G.adventurers.forEach(a => { if (!a.knocked) drawAdventurer(a) })
   G.monsters.forEach(m => { if (!m.dead) drawMonster(m) })
 
   // Particles
